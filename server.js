@@ -13,7 +13,11 @@ app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
 const MIN_WITHDRAWAL = 5;
-const REFERRAL_REWARD = 0.000100;
+const REFERRAL_REWARD = 0.0001;
+
+/* =========================
+   AUTH
+========================= */
 
 function authMiddleware(req, res, next) {
     try {
@@ -27,6 +31,7 @@ function authMiddleware(req, res, next) {
 
         req.telegramUser = verifyTelegramInitData(initData);
         next();
+
     } catch (error) {
         console.error("Auth error:", error.message);
 
@@ -35,6 +40,10 @@ function authMiddleware(req, res, next) {
         });
     }
 }
+
+/* =========================
+   USER
+========================= */
 
 async function getOrCreateUser(telegramUser) {
     const telegramId = String(telegramUser.id);
@@ -81,6 +90,10 @@ async function getOrCreateUser(telegramUser) {
     return created.rows[0];
 }
 
+/* =========================
+   MINING CALCULATION
+========================= */
+
 async function calculateMining(user) {
     if (!user.mining_active || !user.mining_started_at) {
         return user;
@@ -102,9 +115,11 @@ async function calculateMining(user) {
     const ratePerHour = Number(minerResult.rows[0].rate_per_hour);
 
     const startedAt = new Date(user.mining_started_at).getTime();
+    const now = Date.now();
+
     const elapsedSeconds = Math.max(
         0,
-        (Date.now() - startedAt) / 1000
+        (now - startedAt) / 1000
     );
 
     const earned = (ratePerHour / 3600) * elapsedSeconds;
@@ -130,12 +145,13 @@ async function calculateMining(user) {
 }
 
 /* =========================
-   USER
+   ME
 ========================= */
 
 app.get("/api/me", authMiddleware, async (req, res) => {
     try {
         let user = await getOrCreateUser(req.telegramUser);
+
         user = await calculateMining(user);
 
         const miner = await query(
@@ -162,6 +178,7 @@ app.get("/api/me", authMiddleware, async (req, res) => {
             },
             miner: miner.rows[0] || null
         });
+
     } catch (error) {
         console.error(error);
 
@@ -177,9 +194,7 @@ app.get("/api/me", authMiddleware, async (req, res) => {
 
 app.post("/api/mining/start", authMiddleware, async (req, res) => {
     try {
-        let user = await getOrCreateUser(req.telegramUser);
-
-        user = await calculateMining(user);
+        const user = await getOrCreateUser(req.telegramUser);
 
         if (user.mining_active) {
             return res.json({
@@ -206,6 +221,7 @@ app.post("/api/mining/start", authMiddleware, async (req, res) => {
             mining_active: true,
             mining_started_at: result.rows[0].mining_started_at
         });
+
     } catch (error) {
         console.error(error);
 
@@ -220,83 +236,6 @@ app.post("/api/mining/start", authMiddleware, async (req, res) => {
 ========================= */
 
 app.post("/api/mining/claim", authMiddleware, async (req, res) => {
-    try {
-        let user = await getOrCreateUser(req.telegramUser);
-
-        const before = Number(user.balance);
-
-        user = await calculateMining(user);
-
-        const earned = Math.max(
-            0,
-            Number(user.balance) - before
-        );
-
-        const result = await query(
-            `
-            UPDATE users
-            SET mining_active = FALSE,
-                mining_started_at = NULL,
-                updated_at = NOW()
-            WHERE id = $1
-            RETURNING *
-            `,
-            [user.id]
-        );
-
-        const updated = result.rows[0];
-
-        res.json({
-            success: true,
-            earned,
-            balance: updated.balance,
-            total_mined: updated.total_mined,
-            mining_active: false
-        });
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Unable to claim mining"
-        });
-    }
-});
-
-/* =========================
-   MINERS
-========================= */
-
-app.get("/api/miners", authMiddleware, async (req, res) => {
-    try {
-        const result = await query(
-            `
-            SELECT level, name, rate_per_hour, price
-            FROM miners
-            ORDER BY level ASC
-            `
-        );
-
-        res.json({
-            miners: result.rows
-        });
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Unable to load miners"
-        });
-    }
-});
-
-app.post("/api/miners/buy", authMiddleware, async (req, res) => {
-    const minerLevel = Number(req.body.miner_level);
-
-    if (!Number.isInteger(minerLevel)) {
-        return res.status(400).json({
-            error: "Invalid miner level"
-        });
-    }
-
     const connection = await pool.connect();
 
     try {
@@ -324,6 +263,147 @@ app.post("/api/miners/buy", authMiddleware, async (req, res) => {
 
         const user = userResult.rows[0];
 
+        let earned = 0;
+
+        if (user.mining_active && user.mining_started_at) {
+
+            const minerResult = await connection.query(
+                `
+                SELECT rate_per_hour
+                FROM miners
+                WHERE level = $1
+                `,
+                [user.miner_level]
+            );
+
+            if (minerResult.rows.length > 0) {
+
+                const ratePerHour =
+                    Number(minerResult.rows[0].rate_per_hour);
+
+                const startedAt =
+                    new Date(user.mining_started_at).getTime();
+
+                const elapsedSeconds =
+                    Math.max(0, (Date.now() - startedAt) / 1000);
+
+                earned =
+                    (ratePerHour / 3600) * elapsedSeconds;
+            }
+        }
+
+        const updated = await connection.query(
+            `
+            UPDATE users
+            SET balance = balance + $2,
+                total_mined = total_mined + $2,
+                mining_active = FALSE,
+                mining_started_at = NULL,
+                updated_at = NOW()
+            WHERE id = $1
+            RETURNING *
+            `,
+            [user.id, earned]
+        );
+
+        await connection.query("COMMIT");
+
+        res.json({
+            success: true,
+            earned,
+            balance: updated.rows[0].balance,
+            total_mined: updated.rows[0].total_mined,
+            mining_active: false
+        });
+
+    } catch (error) {
+
+        await connection.query("ROLLBACK");
+
+        console.error(error);
+
+        res.status(500).json({
+            error: "Unable to claim mining"
+        });
+
+    } finally {
+        connection.release();
+    }
+});
+
+/* =========================
+   MINERS
+========================= */
+
+app.get("/api/miners", authMiddleware, async (req, res) => {
+    try {
+
+        const result = await query(
+            `
+            SELECT level, name, rate_per_hour, price
+            FROM miners
+            ORDER BY level ASC
+            `
+        );
+
+        res.json({
+            miners: result.rows
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error: "Unable to load miners"
+        });
+    }
+});
+
+/* =========================
+   BUY MINER
+========================= */
+
+app.post("/api/miners/buy", authMiddleware, async (req, res) => {
+
+    const minerLevel = Number(req.body.miner_level);
+
+    if (!Number.isInteger(minerLevel)) {
+        return res.status(400).json({
+            error: "Invalid miner level"
+        });
+    }
+
+    const connection = await pool.connect();
+
+    try {
+
+        await connection.query("BEGIN");
+
+        const telegramId =
+            String(req.telegramUser.id);
+
+        const userResult = await connection.query(
+            `
+            SELECT *
+            FROM users
+            WHERE telegram_id = $1
+            FOR UPDATE
+            `,
+            [telegramId]
+        );
+
+        if (userResult.rows.length === 0) {
+
+            await connection.query("ROLLBACK");
+
+            return res.status(404).json({
+                error: "User not found"
+            });
+        }
+
+        const user = userResult.rows[0];
+
         const minerResult = await connection.query(
             `
             SELECT *
@@ -334,6 +414,7 @@ app.post("/api/miners/buy", authMiddleware, async (req, res) => {
         );
 
         if (minerResult.rows.length === 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(404).json({
@@ -344,6 +425,7 @@ app.post("/api/miners/buy", authMiddleware, async (req, res) => {
         const miner = minerResult.rows[0];
 
         if (minerLevel <= user.miner_level) {
+
             await connection.query("ROLLBACK");
 
             return res.status(400).json({
@@ -354,6 +436,7 @@ app.post("/api/miners/buy", authMiddleware, async (req, res) => {
         const price = Number(miner.price);
 
         if (Number(user.balance) < price) {
+
             await connection.query("ROLLBACK");
 
             return res.status(400).json({
@@ -380,7 +463,9 @@ app.post("/api/miners/buy", authMiddleware, async (req, res) => {
             balance: updated.rows[0].balance,
             miner_level: updated.rows[0].miner_level
         });
+
     } catch (error) {
+
         await connection.query("ROLLBACK");
 
         console.error(error);
@@ -388,6 +473,7 @@ app.post("/api/miners/buy", authMiddleware, async (req, res) => {
         res.status(500).json({
             error: "Unable to buy miner"
         });
+
     } finally {
         connection.release();
     }
@@ -398,8 +484,11 @@ app.post("/api/miners/buy", authMiddleware, async (req, res) => {
 ========================= */
 
 app.get("/api/tasks", authMiddleware, async (req, res) => {
+
     try {
-        const user = await getOrCreateUser(req.telegramUser);
+
+        const user =
+            await getOrCreateUser(req.telegramUser);
 
         const result = await query(
             `
@@ -423,7 +512,9 @@ app.get("/api/tasks", authMiddleware, async (req, res) => {
         res.json({
             tasks: result.rows
         });
+
     } catch (error) {
+
         console.error(error);
 
         res.status(500).json({
@@ -432,8 +523,14 @@ app.get("/api/tasks", authMiddleware, async (req, res) => {
     }
 });
 
+/* =========================
+   CLAIM TASK
+========================= */
+
 app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
-    const taskId = Number(req.body.task_id);
+
+    const taskId =
+        Number(req.body.task_id);
 
     if (!Number.isInteger(taskId)) {
         return res.status(400).json({
@@ -444,9 +541,11 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
     const connection = await pool.connect();
 
     try {
+
         await connection.query("BEGIN");
 
-        const telegramId = String(req.telegramUser.id);
+        const telegramId =
+            String(req.telegramUser.id);
 
         const userResult = await connection.query(
             `
@@ -459,6 +558,7 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
         );
 
         if (userResult.rows.length === 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(404).json({
@@ -479,6 +579,7 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
         );
 
         if (taskResult.rows.length === 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(404).json({
@@ -499,6 +600,7 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
         );
 
         if (completed.rows.length > 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(400).json({
@@ -528,7 +630,7 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
 
         await connection.query("COMMIT");
 
-        const updated = await connection.query(
+        const updated = await query(
             `
             SELECT balance, total_mined
             FROM users
@@ -543,7 +645,9 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
             balance: updated.rows[0].balance,
             total_mined: updated.rows[0].total_mined
         });
+
     } catch (error) {
+
         await connection.query("ROLLBACK");
 
         console.error(error);
@@ -551,6 +655,7 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
         res.status(500).json({
             error: "Unable to claim task"
         });
+
     } finally {
         connection.release();
     }
@@ -561,9 +666,9 @@ app.post("/api/tasks/claim", authMiddleware, async (req, res) => {
 ========================= */
 
 app.post("/api/referrals", authMiddleware, async (req, res) => {
-    const referralCode = String(
-        req.body.referral_code || ""
-    ).trim();
+
+    const referralCode =
+        String(req.body.referral_code || "").trim();
 
     if (!referralCode) {
         return res.status(400).json({
@@ -583,22 +688,25 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
     const connection = await pool.connect();
 
     try {
+
         await connection.query("BEGIN");
 
         const invitedTelegramId =
             String(req.telegramUser.id);
 
-        const invitedResult = await connection.query(
-            `
-            SELECT *
-            FROM users
-            WHERE telegram_id = $1
-            FOR UPDATE
-            `,
-            [invitedTelegramId]
-        );
+        const invitedResult =
+            await connection.query(
+                `
+                SELECT *
+                FROM users
+                WHERE telegram_id = $1
+                FOR UPDATE
+                `,
+                [invitedTelegramId]
+            );
 
         if (invitedResult.rows.length === 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(404).json({
@@ -606,12 +714,14 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
             });
         }
 
-        const invitedUser = invitedResult.rows[0];
+        const invitedUser =
+            invitedResult.rows[0];
 
         if (
             String(invitedUser.telegram_id) ===
             inviterTelegramId
         ) {
+
             await connection.query("ROLLBACK");
 
             return res.status(400).json({
@@ -619,17 +729,19 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
             });
         }
 
-        const inviterResult = await connection.query(
-            `
-            SELECT *
-            FROM users
-            WHERE telegram_id = $1
-            FOR UPDATE
-            `,
-            [inviterTelegramId]
-        );
+        const inviterResult =
+            await connection.query(
+                `
+                SELECT *
+                FROM users
+                WHERE telegram_id = $1
+                FOR UPDATE
+                `,
+                [inviterTelegramId]
+            );
 
         if (inviterResult.rows.length === 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(404).json({
@@ -637,18 +749,21 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
             });
         }
 
-        const inviter = inviterResult.rows[0];
+        const inviter =
+            inviterResult.rows[0];
 
-        const existing = await connection.query(
-            `
-            SELECT id
-            FROM referrals
-            WHERE invited_id = $1
-            `,
-            [invitedUser.id]
-        );
+        const existing =
+            await connection.query(
+                `
+                SELECT id
+                FROM referrals
+                WHERE invited_id = $1
+                `,
+                [invitedUser.id]
+            );
 
         if (existing.rows.length > 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(400).json({
@@ -678,7 +793,10 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
                 updated_at = NOW()
             WHERE id = $1
             `,
-            [inviter.id, REFERRAL_REWARD]
+            [
+                inviter.id,
+                REFERRAL_REWARD
+            ]
         );
 
         await connection.query("COMMIT");
@@ -688,7 +806,9 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
             message: "Referral registered",
             reward: REFERRAL_REWARD
         });
+
     } catch (error) {
+
         await connection.query("ROLLBACK");
 
         console.error(error);
@@ -696,6 +816,7 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
         res.status(500).json({
             error: "Unable to register referral"
         });
+
     } finally {
         connection.release();
     }
@@ -706,15 +827,20 @@ app.post("/api/referrals", authMiddleware, async (req, res) => {
 ========================= */
 
 app.post("/api/withdraw", authMiddleware, async (req, res) => {
-    const amount = Number(req.body.amount);
 
-    const walletAddress = String(
-        req.body.wallet_address || ""
-    ).trim();
+    const amount =
+        Number(req.body.amount);
 
-    if (!Number.isFinite(amount) || amount < MIN_WITHDRAWAL) {
+    const walletAddress =
+        String(req.body.wallet_address || "").trim();
+
+    if (
+        !Number.isFinite(amount) ||
+        amount < MIN_WITHDRAWAL
+    ) {
         return res.status(400).json({
-            error: `Minimum withdrawal is ${MIN_WITHDRAWAL} DTR`
+            error:
+                `Minimum withdrawal is ${MIN_WITHDRAWAL} DTR`
         });
     }
 
@@ -727,22 +853,25 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
     const connection = await pool.connect();
 
     try {
+
         await connection.query("BEGIN");
 
         const telegramId =
             String(req.telegramUser.id);
 
-        const userResult = await connection.query(
-            `
-            SELECT *
-            FROM users
-            WHERE telegram_id = $1
-            FOR UPDATE
-            `,
-            [telegramId]
-        );
+        const userResult =
+            await connection.query(
+                `
+                SELECT *
+                FROM users
+                WHERE telegram_id = $1
+                FOR UPDATE
+                `,
+                [telegramId]
+            );
 
         if (userResult.rows.length === 0) {
+
             await connection.query("ROLLBACK");
 
             return res.status(404).json({
@@ -750,99 +879,4 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
             });
         }
 
-        const user = userResult.rows[0];
-
-        if (Number(user.balance) < amount) {
-            await connection.query("ROLLBACK");
-
-            return res.status(400).json({
-                error: "Insufficient balance"
-            });
-        }
-
-        await connection.query(
-            `
-            UPDATE users
-            SET balance = balance - $2,
-                updated_at = NOW()
-            WHERE id = $1
-            `,
-            [user.id, amount]
-        );
-
-        const withdrawal = await connection.query(
-            `
-            INSERT INTO withdrawals
-            (user_id, amount, wallet_address, status)
-            VALUES ($1, $2, $3, 'pending')
-            RETURNING *
-            `,
-            [
-                user.id,
-                amount,
-                walletAddress
-            ]
-        );
-
-        await connection.query("COMMIT");
-
-        res.json({
-            success: true,
-            withdrawal: withdrawal.rows[0]
-        });
-    } catch (error) {
-        await connection.query("ROLLBACK");
-
-        console.error(error);
-
-        res.status(500).json({
-            error: "Unable to process withdrawal"
-        });
-    } finally {
-        connection.release();
-    }
-});
-
-app.get("/api/health", async (req, res) => {
-    try {
-        await query("SELECT NOW()");
-
-        res.json({
-            status: "ok",
-            database: "connected"
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: "error",
-            database: "disconnected"
-        });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});     connection.release();
-        }
-    }
-);
-
-
-/*
-POST /api/withdraw
-Only creates a withdrawal request.
-No blockchain transaction is performed yet.
-*/
-
-app.post(
-    "/api/withdraw",
-    authMiddleware,
-    async (req, res) => {
-
-        const amount =
-            Number(req.body.amount);
-
-        const walletAddress =
-            String(req.body.wallet_address || "")
-                .trim();
-
-        if (!Number.isFinite(a
+        const
