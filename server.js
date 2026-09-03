@@ -407,6 +407,27 @@ app.post(
                 });
             }
 
+            const minerResult =
+                await connection.query(
+                    `
+                    SELECT rate_per_hour
+                    FROM miners
+                    WHERE level = $1
+                    LIMIT 1
+                    `,
+                    [user.miner_level]
+                );
+
+            if (minerResult.rows.length === 0) {
+                await connection.query("ROLLBACK");
+                return res.status(500).json({
+                    error: "Miner not found"
+                });
+            }
+
+            const miner =
+                minerResult.rows[0];
+
             const mining =
                 calculateMining(user, Number(miner.rate_per_hour));
 
