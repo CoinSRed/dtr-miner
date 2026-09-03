@@ -5,7 +5,7 @@ const { verifyTelegramInitData } = require("./telegram");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const MIN_WITHDRAWAL = 5;
+const MIN_WITHDRAWAL = 4;
 const REFERRAL_REWARD = 100;
 
 app.use(express.json());
