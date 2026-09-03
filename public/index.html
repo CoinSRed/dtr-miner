@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <meta name="theme-color" content="#070707">
+
+    <title>DTR Miner</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="top-header">
+
+        <div class="brand-area">
+            <div class="brand">
+                <span>D</span>TR-MINER
+            </div>
+
+            <div class="brand-subtitle">
+                DIGITAL TERRA REWARD
+            </div>
+        </div>
+
+        <div class="user-box">
+            <span id="headerUsername">@user</span>
+        </div>
+
+    </header>
+
+
+    <main id="app-content">
+
+
+        <!-- MINE -->
+
+        <section id="page-mine" class="page active">
+
+            <div class="welcome">
+                <p>WELCOME BACK</p>
+
+                <h1 id="userName">
+                    DTR Miner
+                </h1>
+            </div>
+
+
+            <div class="balance-card">
+
+                <div class="balance-glow"></div>
+
+                <div class="coin-circle">
+                    D
+                </div>
+
+                <div class="balance-info">
+
+                    <span>Your DTR Balance</span>
+
+                    <strong id="balance">
+                        0.000000
+                    </strong>
+
+                    <small>DTR</small>
+
+                </div>
+
+            </div>
+
+
+            <div class="mining-card">
+
+                <div class="card-glow"></div>
+
+                <div class="mining-header">
+
+                    <div>
+                        <span class="small-title">
+                            MINING STATUS
+                        </span>
+
+                        <h2 id="miningStatus">
+                            Not Mining
+                        </h2>
+                    </div>
+
+                    <div
+                        id="miningIcon"
+                        class="mining-icon"
+                    >
+                        ⛏
+                    </div>
+
+                </div>
+
+
+                <div class="rate-box">
+
+                    <div>
+                        <span>Mining Rate</span>
+
+                        <strong id="miningRate">
+                            0.200000 DTR / hour
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Runtime</span>
+
+                        <strong id="miningTimer">
+                            00:00:00
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="progress-container">
+
+                    <div class="progress-bar">
+
+                        <div
+                            id="miningProgress"
+                            class="progress-fill"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="miningButton"
+                    class="main-button"
+                    onclick="startMining()"
+                >
+                    <span>⛏</span>
+                    START MINING
+                </button>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <span>LEVEL</span>
+                    <strong id="level">1</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>TOTAL DTR</span>
+                    <strong id="totalBalance">
+                        0.000000
+                    </strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>REFERRALS</span>
+                    <strong id="referrals">0</strong>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- TASKS -->
+
+        <section id="page-tasks" class="page">
+
+            <div class="page-title">
+                <div>
+                    <span class="eyebrow">
+                        EARN MORE
+                    </span>
+
+                    <h1>Tasks</h1>
+
+                    <p>
+                        Complete tasks and collect DTR.
+                    </p>
+                </div>
+
+                <div class="title-icon">
+                    ✓
+                </div>
+            </div>
+
+            <div id="tasksList"></div>
+
+        </section>
+
+
+        <!-- MINERS -->
+
+        <section id="page-miners" class="page">
+
+            <div class="page-title">
+
+                <div>
+                    <span class="eyebrow">
+                        UPGRADE
+                    </span>
+
+                    <h1>Miners</h1>
+
+                    <p>
+                        Increase your mining power.
+                    </p>
+                </div>
+
+                <div class="title-icon">
+                    ⚡
+                </div>
+
+            </div>
+
+            <div id="minersList"></div>
+
+        </section>
+
+
+        <!-- FRIENDS -->
+
+        <section id="page-friends" class="page">
+
+            <div class="page-title">
+
+                <div>
+                    <span class="eyebrow">
+                        COMMUNITY
+                    </span>
+
+                    <h1>Friends</h1>
+
+                    <p>
+                        Invite friends and earn rewards.
+                    </p>
+                </div>
+
+                <div class="title-icon">
+                    👥
+                </div>
+
+            </div>
+
+
+            <div class="referral-card">
+
+                <div class="referral-icon">
+                    👥
+                </div>
+
+                <h2>Invite Friends</h2>
+
+                <p>
+                    Share your referral link and earn
+                    DTR when friends join.
+                </p>
+
+                <div class="referral-count">
+
+                    <span>Your Referrals</span>
+
+                    <strong id="referralCount">
+                        0
+                    </strong>
+
+                </div>
+
+                <button
+                    class="main-button"
+                    onclick="copyReferral()"
+                >
+                    COPY REFERRAL LINK
+                </button>
+
+            </div>
+
+
+            <div class="bonus-info">
+
+                <span class="eyebrow">
+                    REFERRAL BONUS
+                </span>
+
+                <h3>
+                    Build your network
+                </h3>
+
+                <p>
+                    Invite real users and grow your
+                    DTR Miner network.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- PROFILE -->
+
+        <section id="page-profile" class="page">
+
+            <div class="page-title">
+
+                <div>
+                    <span class="eyebrow">
+                        ACCOUNT
+                    </span>
+
+                    <h1>Profile</h1>
+
+                    <p>
+                        Your DTR Miner account.
+                    </p>
+                </div>
+
+                <div class="title-icon">
+                    👤
+                </div>
+
+            </div>
+
+
+            <div class="profile-card">
+
+                <div class="profile-avatar">
+                    D
+                </div>
+
+                <h2 id="profileName">
+                    DTR Miner
+                </h2>
+
+                <p id="profileUsername">
+                    @user
+                </p>
+
+            </div>
+
+
+            <div class="profile-stats">
+
+                <div>
+                    <span>Balance</span>
+
+                    <strong id="profileBalance">
+                        0.000000 DTR
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Level</span>
+
+                    <strong id="profileLevel">
+                        1
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Referrals</span>
+
+                    <strong id="profileReferrals">
+                        0
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <div class="withdraw-card">
+
+                <span class="eyebrow">
+                    WALLET
+                </span>
+
+                <h3>
+                    Withdraw DTR
+                </h3>
+
+                <p>
+                    Minimum withdrawal:
+                    <strong>5.000000 DTR</strong>
+                </p>
+
+                <button
+                    class="main-button"
+                    onclick="withdrawDTR()"
+                >
+                    WITHDRAW
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <nav class="bottom-nav">
+
+        <button
+            class="nav-item active"
+            onclick="openPage('mine', this)"
+        >
+            <span>⛏️</span>
+            <label>Mine</label>
+        </button>
+
+        <button
+            class="nav-item"
+            onclick="openPage('tasks', this)"
+        >
+            <span>✓</span>
+            <label>Tasks</label>
+        </button>
+
+        <button
+            class="nav-item"
+            onclick="openPage('miners', this)"
+        >
+            <span>⚡</span>
+            <label>Miners</label>
+        </button>
+
+        <button
+            class="nav-item"
+            onclick="openPage('friends', this)"
+        >
+            <span>👥</span>
+            <label>Friends</label>
+        </button>
+
+        <button
+            class="nav-item"
+            onclick="openPage('profile', this)"
+        >
+            <span>👤</span>
+            <label>Profile</label>
+        </button>
+
+    </nav>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>     </div>
+
+
+            <div class="referral-card">
+
+                <div class="referral-icon">
+                    👥
+                </div>
+
+                <h2>
+                    Invite Friends
+                </h2>
+
+                <p>
+                    Earn rewards when your friends join DTR Miner.
+                </p>
+
+
+                <div class="referral-count">
+
+                    <span>
+                        Your Referrals
+                    </span>
+
+                    <strong id="referralCount">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <button
+                    class="main-button"
+                    onclick="copyReferral()"
+                >
+                    Copy Referral Link
+                </button>
+
+            </div>
+
+
+            <div class="bonus-info">
+
+                <h3>
+                    Referral Bonus
+                </h3>
+
+                <p>
+                    Invite your friends and receive DTR rewards.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= PROFILE ================= -->
+
+        <section
+            id="page-profile"
+            class="page"
+        >
+
+            <div class="page-title">
+
+                <h1>
+                    Profile
+                </h1>
+
+                <p>
+                    Your DTR account
+                </p>
+
+            </div>
+
+
+            <div class="profile-card">
+
+                <div class="profile-avatar">
+                    👤
+                </div>
+
+                <h2 id="profileName">
+                    DTR Miner
+                </h2>
+
+                <p id="profileUsername">
+                    @user
+                </p>
+
+            </div>
+
+
+            <div class="profile-stats">
+
+                <div>
+
+                    <span>
+                        Balance
+                    </span>
+
+                    <strong id="profileBalance">
+                        0.00 DTR
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Level
+                    </span>
+
+                    <strong id="profileLevel">
+                        1
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Referrals
+                    </span>
+
+                    <strong id="profileReferrals">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="withdraw-card">
+
+                <h3>
+                    Withdraw DTR
+                </h3>
+
+                <p>
+                    Withdrawals will be available when the DTR network is launched.
+                </p>
+
+                <button
+                    class="main-button"
+                    onclick="withdrawDTR()"
+                >
+                    Withdraw
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================= BOTTOM NAVIGATION ================= -->
+
+    <nav class="bottom-nav">
+
+        <button
+            class="nav-item active"
+            onclick="openPage('mine', this)"
+        >
+
+            <span>
+                ⛏️
+            </span>
+
+            <label>
+                Mine
+            </label>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="openPage('tasks', this)"
+        >
+
+            <span>
+                📋
+            </span>
+
+            <label>
+                Tasks
+            </label>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="openPage('miners', this)"
+        >
+
+            <span>
+                ⚡
+            </span>
+
+            <label>
+                Miners
+            </label>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="openPage('friends', this)"
+        >
+
+            <span>
+                👥
+            </span>
+
+            <label>
+                Friends
+            </label>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="openPage('profile', this)"
+        >
+
+            <span>
+                👤
+            </span>
+
+            <label>
+                Profile
+            </label>
+
+        </button>
+
+    </nav>
+
+</div>
+
+
+<!-- DTR Miner JavaScript -->
+<script src="app.js"></script>
+
+</body>
+</html>
