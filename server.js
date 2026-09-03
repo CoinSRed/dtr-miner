@@ -3,15 +3,13 @@ const { pool, query } = require("./db");
 const { verifyTelegramInitData } = require("./telegram");
 
 const app = express();
-
 const PORT = process.env.PORT || 3000;
 
 const MIN_WITHDRAWAL = 5;
-const REFERRAL_REWARD = 0.0001;
+const REFERRAL_REWARD = 100;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(express.static("."));
 
 /* =========================
@@ -19,11 +17,8 @@ app.use(express.static("."));
 ========================= */
 
 function authMiddleware(req, res, next) {
-
     try {
-
-        const initData =
-            req.headers["x-telegram-init-data"];
+        const initData = req.headers["x-telegram-init-data"];
 
         if (!initData) {
             return res.status(401).json({
@@ -31,15 +26,12 @@ function authMiddleware(req, res, next) {
             });
         }
 
-        const user =
-            verifyTelegramInitData(initData);
+        const user = verifyTelegramInitData(initData);
 
         req.telegramUser = user;
-
         next();
 
     } catch (error) {
-
         console.error("Auth error:", error);
 
         return res.status(401).json({
@@ -54,9 +46,7 @@ function authMiddleware(req, res, next) {
 ========================= */
 
 async function getOrCreateUser(telegramUser) {
-
-    const telegramId =
-        String(telegramUser.id);
+    const telegramId = String(telegramUser.id);
 
     let result = await query(
         `
@@ -71,14 +61,8 @@ async function getOrCreateUser(telegramUser) {
         return result.rows[0];
     }
 
-    const username =
-        telegramUser.username || null;
-
-    const firstName =
-        telegramUser.first_name || "";
-
-    const lastName =
-        telegramUser.last_name || "";
+    const username = telegramUser.username || null;
+    const firstName = telegramUser.first_name || "DTR User";
 
     result = await query(
         `
@@ -86,18 +70,15 @@ async function getOrCreateUser(telegramUser) {
         (
             telegram_id,
             username,
-            first_name,
-            last_name,
-            balance
+            first_name
         )
-        VALUES ($1, $2, $3, $4, 0)
+        VALUES ($1, $2, $3)
         RETURNING *
         `,
         [
             telegramId,
             username,
-            firstName,
-            lastName
+            firstName
         ]
     );
 
@@ -111,8 +92,10 @@ async function getOrCreateUser(telegramUser) {
 
 function calculateMining(user) {
 
-    if (!user.mining_started_at) {
-
+    if (
+        !user.mining_active ||
+        !user.mining_started_at
+    ) {
         return {
             earned: 0,
             elapsedSeconds: 0
@@ -122,11 +105,13 @@ function calculateMining(user) {
     const started =
         new Date(user.mining_started_at).getTime();
 
-    const now =
-        Date.now();
+    const now = Date.now();
 
     const elapsedSeconds =
-        Math.max(0, (now - started) / 1000);
+        Math.max(
+            0,
+            (now - started) / 1000
+        );
 
     const rate =
         Number(user.mining_rate || 0);
@@ -138,6 +123,38 @@ function calculateMining(user) {
         earned,
         elapsedSeconds
     };
+}
+
+
+/* =========================
+   GET CURRENT MINER
+========================= */
+
+async function getUserMiner(user) {
+
+    const level =
+        Number(user.miner_level || 1);
+
+    const result =
+        await query(
+            `
+            SELECT
+                level,
+                name,
+                rate_per_hour,
+                price
+            FROM miners
+            WHERE level = $1
+            LIMIT 1
+            `,
+            [level]
+        );
+
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    return result.rows[0];
 }
 
 
@@ -157,37 +174,85 @@ app.get(
                     req.telegramUser
                 );
 
+            const miner =
+                await getUserMiner(user);
+
             const mining =
                 calculateMining(user);
+
+            const rate =
+                miner
+                    ? Number(miner.rate_per_hour)
+                    : 0;
 
             res.json({
                 success: true,
 
                 user: {
                     id: user.id,
-                    telegram_id: user.telegram_id,
-                    username: user.username,
-                    first_name: user.first_name,
-                    last_name: user.last_name,
 
-                    balance: Number(user.balance || 0),
+                    telegram_id:
+                        user.telegram_id,
 
-                    level: user.level || 1,
+                    username:
+                        user.username,
+
+                    first_name:
+                        user.first_name,
+
+                    last_name:
+                        null,
+
+                    balance:
+                        Number(user.balance || 0),
+
+                    total_mined:
+                        Number(user.total_mined || 0),
+
+                    miner_level:
+                        Number(user.miner_level || 1),
+
+                    referrals_count:
+                        Number(user.referrals_count || 0),
+
+                    mining_active:
+                        Boolean(user.mining_active),
 
                     mining_started_at:
                         user.mining_started_at,
 
                     mining_rate:
-                        Number(user.mining_rate || 0),
+                        rate,
 
                     earned:
                         mining.earned
-                }
+                },
+
+                miner: miner
+                    ? {
+                        level:
+                            Number(miner.level),
+
+                        name:
+                            miner.name,
+
+                        rate_per_hour:
+                            Number(
+                                miner.rate_per_hour
+                            ),
+
+                        price:
+                            Number(miner.price)
+                    }
+                    : null
             });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "GET /api/me error:",
+                error
+            );
 
             res.status(500).json({
                 error: "Unable to get user"
@@ -213,63 +278,66 @@ app.post(
                     req.telegramUser
                 );
 
-            if (user.mining_started_at) {
+            if (user.mining_active) {
 
                 return res.json({
                     success: true,
-                    message: "Mining already started",
+
+                    message:
+                        "Mining already started",
+
+                    mining_active: true,
+
                     mining_started_at:
-                        user.mining_started_at
+                        user.mining_started_at,
+
+                    mining_rate:
+                        Number(
+                            user.mining_rate || 0
+                        )
                 });
             }
 
             const miner =
-                await query(
-                    `
-                    SELECT *
-                    FROM miners
-                    WHERE price = 0
-                    ORDER BY id
-                    LIMIT 1
-                    `
-                );
+                await getUserMiner(user);
 
-            let miningRate = 0.20;
-
-            if (miner.rows.length > 0) {
-                miningRate =
-                    Number(miner.rows[0].rate_per_hour);
-            }
+            const miningRate =
+                miner
+                    ? Number(miner.rate_per_hour)
+                    : 0.20;
 
             const result =
                 await query(
                     `
                     UPDATE users
-                    SET mining_started_at = NOW(),
-                        mining_rate = $2,
+                    SET
+                        mining_active = TRUE,
+                        mining_started_at = NOW(),
                         updated_at = NOW()
                     WHERE id = $1
                     RETURNING *
                     `,
-                    [
-                        user.id,
-                        miningRate
-                    ]
+                    [user.id]
                 );
 
             res.json({
                 success: true,
 
+                mining_active: true,
+
                 mining_started_at:
                     result.rows[0].mining_started_at,
 
                 mining_rate:
-                    Number(result.rows[0].mining_rate)
+                    miningRate
             });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "START MINING error:",
+                error
+            );
 
             res.status(500).json({
                 error: "Unable to start mining"
@@ -311,7 +379,9 @@ app.post(
 
             if (userResult.rows.length === 0) {
 
-                await connection.query("ROLLBACK");
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(404).json({
                     error: "User not found"
@@ -321,21 +391,43 @@ app.post(
             const user =
                 userResult.rows[0];
 
-            const mining =
-                calculateMining(user);
+            if (!user.mining_active) {
 
-            const earned =
-                Number(mining.earned);
-
-            if (earned <= 0) {
-
-                await connection.query("ROLLBACK");
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.json({
                     success: true,
                     earned: 0,
                     balance:
-                        Number(user.balance || 0)
+                        Number(
+                            user.balance || 0
+                        )
+                });
+            }
+
+            const mining =
+                calculateMining(user);
+
+            const earned =
+                Number(
+                    mining.earned.toFixed(8)
+                );
+
+            if (earned <= 0) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.json({
+                    success: true,
+                    earned: 0,
+                    balance:
+                        Number(
+                            user.balance || 0
+                        )
                 });
             }
 
@@ -343,8 +435,11 @@ app.post(
                 await connection.query(
                     `
                     UPDATE users
-                    SET balance = balance + $2,
-                        mining_started_at = NOW(),
+                    SET
+                        balance = balance + $2,
+                        total_mined = total_mined + $2,
+                        mining_active = FALSE,
+                        mining_started_at = NULL,
                         updated_at = NOW()
                     WHERE id = $1
                     RETURNING *
@@ -365,17 +460,30 @@ app.post(
                 balance:
                     Number(
                         updated.rows[0].balance
-                    )
+                    ),
+
+                total_mined:
+                    Number(
+                        updated.rows[0].total_mined
+                    ),
+
+                mining_active: false
             });
 
         } catch (error) {
 
-            await connection.query("ROLLBACK");
+            await connection.query(
+                "ROLLBACK"
+            );
 
-            console.error(error);
+            console.error(
+                "CLAIM MINING error:",
+                error
+            );
 
             res.status(500).json({
-                error: "Unable to claim mining"
+                error:
+                    "Unable to claim mining"
             });
 
         } finally {
@@ -384,7 +492,6 @@ app.post(
         }
     }
 );
-
 
 /* =========================
    GET MINERS
@@ -400,20 +507,49 @@ app.get(
             const result =
                 await query(
                     `
-                    SELECT *
+                    SELECT
+                        level,
+                        name,
+                        rate_per_hour,
+                        price
                     FROM miners
-                    ORDER BY price ASC
+                    ORDER BY level ASC
                     `
                 );
 
             res.json({
                 success: true,
-                miners: result.rows
+
+                miners:
+                    result.rows.map(
+                        miner => ({
+                            level:
+                                Number(
+                                    miner.level
+                                ),
+
+                            name:
+                                miner.name,
+
+                            rate_per_hour:
+                                Number(
+                                    miner.rate_per_hour
+                                ),
+
+                            price:
+                                Number(
+                                    miner.price
+                                )
+                        })
+                    )
             });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "GET MINERS error:",
+                error
+            );
 
             res.status(500).json({
                 error: "Unable to get miners"
@@ -432,34 +568,77 @@ app.post(
     authMiddleware,
     async (req, res) => {
 
+        const connection =
+            await pool.connect();
+
         try {
 
-            const minerLevel =
-                Number(req.body.miner_level);
+            await connection.query("BEGIN");
 
-            if (!Number.isFinite(minerLevel)) {
+            const minerLevel =
+                Number(
+                    req.body.miner_level
+                );
+
+            if (
+                !Number.isInteger(minerLevel) ||
+                minerLevel < 1
+            ) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(400).json({
-                    error: "Invalid miner level"
+                    error:
+                        "Invalid miner level"
+                });
+            }
+
+            const telegramId =
+                String(req.telegramUser.id);
+
+            const userResult =
+                await connection.query(
+                    `
+                    SELECT *
+                    FROM users
+                    WHERE telegram_id = $1
+                    FOR UPDATE
+                    `,
+                    [telegramId]
+                );
+
+            if (userResult.rows.length === 0) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.status(404).json({
+                    error: "User not found"
                 });
             }
 
             const user =
-                await getOrCreateUser(
-                    req.telegramUser
-                );
+                userResult.rows[0];
 
             const minerResult =
-                await query(
+                await connection.query(
                     `
                     SELECT *
                     FROM miners
-                    WHERE id = $1
+                    WHERE level = $1
+                    LIMIT 1
                     `,
                     [minerLevel]
                 );
 
             if (minerResult.rows.length === 0) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(404).json({
                     error: "Miner not found"
@@ -472,19 +651,46 @@ app.post(
             const price =
                 Number(miner.price);
 
-            if (Number(user.balance) < price) {
+            const currentLevel =
+                Number(
+                    user.miner_level || 1
+                );
+
+            if (
+                minerLevel <= currentLevel
+            ) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(400).json({
-                    error: "Insufficient balance"
+                    error:
+                        "You already own this miner or a higher level"
                 });
             }
 
-            const result =
-                await query(
+            if (
+                Number(user.balance) < price
+            ) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.status(400).json({
+                    error:
+                        "Insufficient balance"
+                });
+            }
+
+            const updated =
+                await connection.query(
                     `
                     UPDATE users
-                    SET balance = balance - $2,
-                        mining_rate = $3,
+                    SET
+                        balance = balance - $2,
+                        miner_level = $3,
                         updated_at = NOW()
                     WHERE id = $1
                     RETURNING *
@@ -492,33 +698,50 @@ app.post(
                     [
                         user.id,
                         price,
-                        Number(
-                            miner.rate_per_hour
-                        )
+                        minerLevel
                     ]
                 );
+
+            await connection.query("COMMIT");
 
             res.json({
                 success: true,
 
                 balance:
                     Number(
-                        result.rows[0].balance
+                        updated.rows[0].balance
+                    ),
+
+                miner_level:
+                    Number(
+                        updated.rows[0].miner_level
                     ),
 
                 mining_rate:
                     Number(
-                        result.rows[0].mining_rate
+                        miner.rate_per_hour
                     )
             });
 
         } catch (error) {
 
-            console.error(error);
+            await connection.query(
+                "ROLLBACK"
+            );
+
+            console.error(
+                "BUY MINER error:",
+                error
+            );
 
             res.status(500).json({
-                error: "Unable to buy miner"
+                error:
+                    "Unable to buy miner"
             });
+
+        } finally {
+
+            connection.release();
         }
     }
 );
@@ -535,24 +758,72 @@ app.get(
 
         try {
 
+            const user =
+                await getOrCreateUser(
+                    req.telegramUser
+                );
+
             const result =
                 await query(
                     `
-                    SELECT *
-                    FROM tasks
-                    WHERE active = true
-                    ORDER BY id ASC
-                    `
+                    SELECT
+                        t.id,
+                        t.task_key,
+                        t.title,
+                        t.reward,
+                        t.active,
+                        CASE
+                            WHEN ut.id IS NOT NULL
+                            THEN TRUE
+                            ELSE FALSE
+                        END AS completed
+                    FROM tasks t
+                    LEFT JOIN user_tasks ut
+                        ON ut.task_id = t.id
+                        AND ut.user_id = $1
+                    WHERE t.active = TRUE
+                    ORDER BY t.id ASC
+                    `,
+                    [user.id]
                 );
 
             res.json({
                 success: true,
-                tasks: result.rows
+
+                tasks:
+                    result.rows.map(
+                        task => ({
+                            id:
+                                Number(task.id),
+
+                            task_key:
+                                task.task_key,
+
+                            title:
+                                task.title,
+
+                            reward:
+                                Number(
+                                    task.reward
+                                ),
+
+                            active:
+                                task.active,
+
+                            completed:
+                                Boolean(
+                                    task.completed
+                                )
+                        })
+                    )
             });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "GET TASKS error:",
+                error
+            );
 
             res.status(500).json({
                 error: "Unable to get tasks"
@@ -581,19 +852,47 @@ app.post(
             const taskId =
                 Number(req.body.task_id);
 
-            if (!Number.isFinite(taskId)) {
+            if (
+                !Number.isInteger(taskId)
+            ) {
 
-                await connection.query("ROLLBACK");
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(400).json({
-                    error: "Invalid task ID"
+                    error:
+                        "Invalid task ID"
+                });
+            }
+
+            const telegramId =
+                String(req.telegramUser.id);
+
+            const userResult =
+                await connection.query(
+                    `
+                    SELECT *
+                    FROM users
+                    WHERE telegram_id = $1
+                    FOR UPDATE
+                    `,
+                    [telegramId]
+                );
+
+            if (userResult.rows.length === 0) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.status(404).json({
+                    error: "User not found"
                 });
             }
 
             const user =
-                await getOrCreateUser(
-                    req.telegramUser
-                );
+                userResult.rows[0];
 
             const taskResult =
                 await connection.query(
@@ -601,14 +900,17 @@ app.post(
                     SELECT *
                     FROM tasks
                     WHERE id = $1
-                      AND active = true
+                      AND active = TRUE
+                    LIMIT 1
                     `,
                     [taskId]
                 );
 
             if (taskResult.rows.length === 0) {
 
-                await connection.query("ROLLBACK");
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(404).json({
                     error: "Task not found"
@@ -621,10 +923,11 @@ app.post(
             const existing =
                 await connection.query(
                     `
-                    SELECT *
+                    SELECT id
                     FROM user_tasks
                     WHERE user_id = $1
                       AND task_id = $2
+                    LIMIT 1
                     `,
                     [
                         user.id,
@@ -632,12 +935,17 @@ app.post(
                     ]
                 );
 
-            if (existing.rows.length > 0) {
+            if (
+                existing.rows.length > 0
+            ) {
 
-                await connection.query("ROLLBACK");
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(400).json({
-                    error: "Task already completed"
+                    error:
+                        "Task already completed"
                 });
             }
 
@@ -647,7 +955,11 @@ app.post(
             await connection.query(
                 `
                 INSERT INTO user_tasks
-                (user_id, task_id, completed_at)
+                (
+                    user_id,
+                    task_id,
+                    completed_at
+                )
                 VALUES ($1, $2, NOW())
                 `,
                 [
@@ -660,7 +972,8 @@ app.post(
                 await connection.query(
                     `
                     UPDATE users
-                    SET balance = balance + $2,
+                    SET
+                        balance = balance + $2,
                         updated_at = NOW()
                     WHERE id = $1
                     RETURNING *
@@ -686,12 +999,18 @@ app.post(
 
         } catch (error) {
 
-            await connection.query("ROLLBACK");
+            await connection.query(
+                "ROLLBACK"
+            );
 
-            console.error(error);
+            console.error(
+                "CLAIM TASK error:",
+                error
+            );
 
             res.status(500).json({
-                error: "Unable to claim task"
+                error:
+                    "Unable to claim task"
             });
 
         } finally {
@@ -701,9 +1020,8 @@ app.post(
     }
 );
 
-
 /* =========================
-   REFERRALS
+   GET REFERRALS
 ========================= */
 
 app.get(
@@ -721,7 +1039,12 @@ app.get(
             const result =
                 await query(
                     `
-                    SELECT COUNT(*) AS count
+                    SELECT
+                        COUNT(*) AS count,
+                        COALESCE(
+                            SUM(reward),
+                            0
+                        ) AS total_reward
                     FROM referrals
                     WHERE inviter_id = $1
                     `,
@@ -731,21 +1054,27 @@ app.get(
             res.json({
                 success: true,
 
-                count:
+                referrals:
                     Number(
-                        result.rows[0].count
+                        result.rows[0].count || 0
                     ),
 
-                reward:
-                    REFERRAL_REWARD
+                total_reward:
+                    Number(
+                        result.rows[0].total_reward || 0
+                    )
             });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "GET REFERRALS error:",
+                error
+            );
 
             res.status(500).json({
-                error: "Unable to get referrals"
+                error:
+                    "Unable to get referrals"
             });
         }
     }
@@ -761,45 +1090,75 @@ app.post(
     authMiddleware,
     async (req, res) => {
 
-        const amount =
-            Number(req.body.amount);
-
-        const walletAddress =
-            String(
-                req.body.wallet_address || ""
-            ).trim();
-
-        if (
-            !Number.isFinite(amount) ||
-            amount <= 0
-        ) {
-
-            return res.status(400).json({
-                error: "Invalid amount"
-            });
-        }
-
-        if (amount < MIN_WITHDRAWAL) {
-
-            return res.status(400).json({
-                error:
-                    `Minimum withdrawal is ${MIN_WITHDRAWAL} DTR`
-            });
-        }
-
-        if (!walletAddress) {
-
-            return res.status(400).json({
-                error: "Wallet address is required"
-            });
-        }
-
         const connection =
             await pool.connect();
 
         try {
 
             await connection.query("BEGIN");
+
+            const amount =
+                Number(req.body.amount);
+
+            const walletAddress =
+                String(
+                    req.body.wallet_address || ""
+                ).trim();
+
+            if (
+                !Number.isFinite(amount) ||
+                amount <= 0
+            ) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.status(400).json({
+                    error:
+                        "Invalid withdrawal amount"
+                });
+            }
+
+            if (
+                amount < MIN_WITHDRAWAL
+            ) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.status(400).json({
+                    error:
+                        `Minimum withdrawal is ${MIN_WITHDRAWAL} DTR`
+                });
+            }
+
+            if (!walletAddress) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.status(400).json({
+                    error:
+                        "Wallet address is required"
+                });
+            }
+
+            if (
+                walletAddress.length > 255
+            ) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
+
+                return res.status(400).json({
+                    error:
+                        "Wallet address is too long"
+                });
+            }
 
             const telegramId =
                 String(req.telegramUser.id);
@@ -815,42 +1174,53 @@ app.post(
                     [telegramId]
                 );
 
-            if (userResult.rows.length === 0) {
+            if (
+                userResult.rows.length === 0
+            ) {
 
-                await connection.query("ROLLBACK");
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(404).json({
-                    error: "User not found"
+                    error:
+                        "User not found"
                 });
             }
 
             const user =
                 userResult.rows[0];
 
-            if (
-                Number(user.balance) <
-                amount
-            ) {
+            const balance =
+                Number(user.balance || 0);
 
-                await connection.query("ROLLBACK");
+            if (balance < amount) {
+
+                await connection.query(
+                    "ROLLBACK"
+                );
 
                 return res.status(400).json({
-                    error: "Insufficient balance"
+                    error:
+                        "Insufficient balance"
                 });
             }
 
-            await connection.query(
-                `
-                UPDATE users
-                SET balance = balance - $2,
-                    updated_at = NOW()
-                WHERE id = $1
-                `,
-                [
-                    user.id,
-                    amount
-                ]
-            );
+            const updated =
+                await connection.query(
+                    `
+                    UPDATE users
+                    SET
+                        balance = balance - $2,
+                        updated_at = NOW()
+                    WHERE id = $1
+                    RETURNING *
+                    `,
+                    [
+                        user.id,
+                        amount
+                    ]
+                );
 
             const withdrawal =
                 await connection.query(
@@ -862,8 +1232,19 @@ app.post(
                         wallet_address,
                         status
                     )
-                    VALUES ($1, $2, $3, 'pending')
-                    RETURNING *
+                    VALUES
+                    (
+                        $1,
+                        $2,
+                        $3,
+                        'pending'
+                    )
+                    RETURNING
+                        id,
+                        amount,
+                        wallet_address,
+                        status,
+                        created_at
                     `,
                     [
                         user.id,
@@ -876,19 +1257,54 @@ app.post(
 
             res.json({
                 success: true,
-                withdrawal:
-                    withdrawal.rows[0]
+
+                message:
+                    "Withdrawal request submitted",
+
+                withdrawal: {
+                    id:
+                        Number(
+                            withdrawal.rows[0].id
+                        ),
+
+                    amount:
+                        Number(
+                            withdrawal.rows[0].amount
+                        ),
+
+                    wallet_address:
+                        withdrawal.rows[0]
+                            .wallet_address,
+
+                    status:
+                        withdrawal.rows[0]
+                            .status,
+
+                    created_at:
+                        withdrawal.rows[0]
+                            .created_at
+                },
+
+                balance:
+                    Number(
+                        updated.rows[0].balance
+                    )
             });
 
         } catch (error) {
 
-            await connection.query("ROLLBACK");
+            await connection.query(
+                "ROLLBACK"
+            );
 
-            console.error(error);
+            console.error(
+                "WITHDRAW error:",
+                error
+            );
 
             res.status(500).json({
                 error:
-                    "Unable to process withdrawal"
+                    "Unable to create withdrawal"
             });
 
         } finally {
@@ -904,25 +1320,31 @@ app.post(
 ========================= */
 
 app.get(
-    "/api/health",
+    "/health",
     async (req, res) => {
 
         try {
 
-            await query(
-                "SELECT NOW()"
-            );
+            const result =
+                await query(
+                    "SELECT NOW() AS time"
+                );
 
             res.json({
                 status: "ok",
-                database: "connected"
+                database: "connected",
+                time:
+                    result.rows[0].time
             });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "HEALTH error:",
+                error
+            );
 
-                        res.status(500).json({
+            res.status(500).json({
                 status: "error",
                 database: "disconnected"
             });
@@ -932,13 +1354,68 @@ app.get(
 
 
 /* =========================
+   ROOT
+========================= */
+
+app.get(
+    "/",
+    (req, res) => {
+
+        res.sendFile(
+            require("path").join(
+                __dirname,
+                "index.html"
+            )
+        );
+    }
+);
+
+
+/* =========================
+   404
+========================= */
+
+app.use(
+    (req, res) => {
+
+        res.status(404).json({
+            error: "Route not found"
+        });
+    }
+);
+
+
+/* =========================
+   ERROR HANDLER
+========================= */
+
+app.use(
+    (error, req, res, next) => {
+
+        console.error(
+            "Unhandled server error:",
+            error
+        );
+
+        res.status(500).json({
+            error:
+                "Internal server error"
+        });
+    }
+);
+
+
+/* =========================
    START SERVER
 ========================= */
 
-app.listen(PORT, () => {
+app.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
 
-    console.log(
-        `Server running on port ${PORT}`
-    );
-
-});
+        console.log(
+            `DTR Miner server running on port ${PORT}`
+        );
+    }
+);
