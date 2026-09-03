@@ -899,4 +899,4 @@ app.post(
             String(req.body.wallet_address || "")
                 .trim();
 
-        if (!Number.isFinite(a
+        if (!Number.isFinite(amount)) {
