@@ -10,7 +10,7 @@ const REFERRAL_REWARD = 100;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("."));
+app.use(express.static("public"));
 
 /* =========================
    TELEGRAM AUTH
@@ -90,7 +90,7 @@ async function getOrCreateUser(telegramUser) {
    MINING CALCULATION
 ========================= */
 
-function calculateMining(user) {
+function calculateMining(user, miningRate) {
 
     if (
         !user.mining_active ||
@@ -114,7 +114,7 @@ function calculateMining(user) {
         );
 
     const rate =
-        Number(user.mining_rate || 0);
+        Number(miningRate || 0);
 
     const earned =
         elapsedSeconds * (rate / 3600);
@@ -178,7 +178,7 @@ app.get(
                 await getUserMiner(user);
 
             const mining =
-                calculateMining(user);
+                calculateMining(user, Number(miner.rate_per_hour));
 
             const rate =
                 miner
@@ -293,7 +293,7 @@ app.post(
 
                     mining_rate:
                         Number(
-                            user.mining_rate || 0
+                            miner.rate_per_hour || 0
                         )
                 });
             }
@@ -408,7 +408,7 @@ app.post(
             }
 
             const mining =
-                calculateMining(user);
+                calculateMining(user, Number(miner.rate_per_hour));
 
             const earned =
                 Number(
@@ -1364,7 +1364,7 @@ app.get(
         res.sendFile(
             require("path").join(
                 __dirname,
-                "index.html"
+                "public", "index.html"
             )
         );
     }
