@@ -1,15 +1,17 @@
 {
   "name": "dtr-miner",
   "version": "1.0.0",
-  "description": "DTR Mining Telegram Mini App Backend",
+  "description": "DTR Miner Telegram App",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "engines": {
-    "node": ">=20"
-  },
   "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}
+
     "express": "^5.1.0",
     "pg": "^8.16.3"
   }
