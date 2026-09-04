@@ -10,10 +10,16 @@
 <title>DTR Miner</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
 
-</head><body><div class="app"><!-- ================= HEADER ================= -->
+</head>
+<body>
+
+<div class="app">
+
+<!-- ================= HEADER ================= -->
 
 <header class="top-header">
 
@@ -24,14 +30,15 @@
         </div>
 
         <div class="brand-subtitle">
-            DIGITAL TERRA REWARD
-        </div>
+    DIGITAL TERRA REWARD
+</div>
 
-    </div>
+</div>
 
-    <div class="user-box">
-        <span id="headerUsername">@user</span>
-    </div>
+<div class="user-box">
+    <div id="ton-connect"></div>
+    <span id="headerUsername">@user</span>
+</div>
 
 </header>
 
