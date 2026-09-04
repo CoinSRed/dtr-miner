@@ -916,3 +916,46 @@ async function initialize() {
 }
 
 initialize();
+
+
+
+
+
+
+
+
+
+/* =========================
+   TON CONNECT
+========================= */
+
+let tonConnectUI = null;
+
+async function initTonConnect() {
+    try {
+        if (typeof TON_CONNECT_UI === "undefined") {
+            console.error("TON Connect library not loaded.");
+            return;
+        }
+
+        tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: `${window.location.origin}/tonconnect-manifest.json`,
+            buttonRootId: "ton-connect"
+        });
+
+        tonConnectUI.onStatusChange((wallet) => {
+            if (wallet) {
+                console.log("TON wallet connected:", wallet);
+            } else {
+                console.log("TON wallet disconnected");
+            }
+        });
+
+    } catch (error) {
+        console.error("TON Connect initialization failed:", error);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    initTonConnect();
+});
