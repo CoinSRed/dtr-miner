@@ -186,7 +186,7 @@ app.get(
                 await getUserMiner(user);
 
             const mining =
-                calculateMining(user, Number(miner.rate_per_hour));
+                calculateMining(user, miner ? Number(miner.rate_per_hour) : 0);
 
             const rate =
                 miner
@@ -208,6 +208,8 @@ app.get(
                     first_name:
                         user.first_name,
 
+                    wallet_address:
+                        user.wallet_address || null,
                     last_name:
                         null,
 
@@ -437,7 +439,7 @@ app.post(
                 minerResult.rows[0];
 
             const mining =
-                calculateMining(user, Number(miner.rate_per_hour));
+                calculateMining(user, miner ? Number(miner.rate_per_hour) : 0);
 
             const earned =
                 Number(
@@ -1108,6 +1110,83 @@ app.get(
         }
     }
 );
+/* =========================
+   SAVE WALLET
+========================= */
+
+app.post(
+    "/api/wallet",
+    authMiddleware,
+    async (req, res) => {
+
+        try {
+            const walletAddress =
+                String(
+                    req.body.wallet_address || ""
+                ).trim();
+
+            if (!walletAddress) {
+                return res.status(400).json({
+                    error:
+                        "Wallet address is required"
+                });
+            }
+
+            if (walletAddress.length > 255) {
+                return res.status(400).json({
+                    error:
+                        "Wallet address is too long"
+                });
+            }
+
+            const result =
+                await pool.query(
+                    `
+                    UPDATE users
+                    SET
+                        wallet_address = $1,
+                        updated_at = NOW()
+                    WHERE telegram_id = $2
+                    RETURNING wallet_address
+                    `,
+                    [
+                        walletAddress,
+                        String(req.telegramUser.id)
+                    ]
+                );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({
+                    error:
+                        "User not found"
+                });
+            }
+
+            res.json({
+                success: true,
+                wallet_address:
+                    result.rows[0].wallet_address
+            });
+
+        } catch (error) {
+
+            console.error(
+                "SAVE WALLET error:",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Unable to save wallet"
+            });
+        }
+    }
+);
+
+
+/* =========================
+   WITHDRAW
+========================= */
 
 
 /* =========================
