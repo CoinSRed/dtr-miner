@@ -1510,3 +1510,32 @@ button {
     border-radius: 14px !important;
     font-weight: 700 !important;
 }
+
+
+/* =========================
+   WITHDRAW WALLET INPUT
+========================= */
+
+.withdraw-card input#walletAddress {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 0 16px;
+    margin-top: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px;
+    background: #0d0d0d;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s ease;
+}
+
+.withdraw-card input#walletAddress::placeholder {
+    color: rgba(255,255,255,0.40);
+}
+
+.withdraw-card input#walletAddress:focus {
+    border-color: rgba(255,255,255,0.30);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+}
