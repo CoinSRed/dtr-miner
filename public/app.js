@@ -943,11 +943,32 @@ async function initTonConnect() {
             buttonRootId: "ton-connect"
         });
 
-        tonConnectUI.onStatusChange((wallet) => {
-            if (wallet) {
-                console.log("TON wallet connected:", wallet);
-            } else {
+        tonConnectUI.onStatusChange(async (wallet) => {
+            if (!wallet) {
                 console.log("TON wallet disconnected");
+                return;
+            }
+
+            const walletAddress = wallet.account?.address;
+
+            if (!walletAddress) {
+                console.error("Wallet address not found.");
+                return;
+            }
+
+            console.log("TON wallet connected:", walletAddress);
+
+            try {
+                const response = await api("/api/wallet", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        wallet_address: walletAddress
+                    })
+                });
+
+                console.log("Wallet saved:", response);
+            } catch (error) {
+                console.error("Failed to save wallet:", error);
             }
         });
 
