@@ -52,6 +52,13 @@ async function api(url, options = {}) {
         headers
     });
 
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
             const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -78,6 +85,13 @@ function showMessage(message) {
 
 async function loadUser() {
     try {
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
          const data =
     await api("/api/me");
 
@@ -221,6 +235,13 @@ function updateMiningButton() {
 
 async function startMining() {
     try {
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
                 const data =
             await api("/api/mining/start", {
                 method: "POST"
@@ -327,6 +348,13 @@ function startMiningTimer(startTime) {
 
 async function claimMining() {
     try {
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
                 const data =
             await api("/api/mining/claim", {
                 method: "POST"
@@ -381,6 +409,13 @@ async function claimMining() {
 
 async function loadMiners() {
     try {
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
         const data =
             await api("/api/miners");
 
@@ -491,6 +526,13 @@ function renderMiners(miners) {
 
 async function buyMiner(level) {
     try {
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
         const data =
             await api("/api/miners/buy", {
                 method: "POST",
@@ -526,6 +568,13 @@ async function buyMiner(level) {
 
 async function loadTasks() {
     try {
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
         const data =
             await api("/api/tasks");
 
@@ -693,6 +742,13 @@ async function completeTask(taskId) {
 
         try {
 
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
+
             const data =
                 await api("/api/tasks/claim", {
                     method: "POST",
@@ -785,6 +841,13 @@ if (!wallet) {
 
     try {
 
+
+        await api("/api/wallet", {
+            method: "POST",
+            body: JSON.stringify({
+                wallet_address: wallet
+            })
+        });
 
         const data =
             await api("/api/withdraw", {
