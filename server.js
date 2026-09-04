@@ -277,44 +277,34 @@ app.get(
 ========================= */
 
 app.post(
-    "/api/mining/start",
-    authMiddleware,
+    "/api/mining/start",    authMiddleware,
     async (req, res) => {
 
         try {
 
-            const user =
-                await getOrCreateUser(
-                    req.telegramUser
-                );
+    const user =
+        await getOrCreateUser(
+            req.telegramUser
+        );
 
-            if (user.mining_active) {
+    const miner =
+        await getUserMiner(user);
 
-                return res.json({
-                    success: true,
+    const miningRate =
+        miner
+            ? Number(miner.rate_per_hour)
+            : 0.20;
 
-                    message:
-                        "Mining already started",
+    if (user.mining_active) {
+        return res.json({
+            success: true,
+            message: "Mining already started",
+            mining_active: true,
+            mining_started_at: user.mining_started_at,
+            mining_rate: miningRate
+        });
+    }
 
-                    mining_active: true,
-
-                    mining_started_at:
-                        user.mining_started_at,
-
-                    mining_rate:
-                        Number(
-                            miner.rate_per_hour || 0
-                        )
-                });
-            }
-
-            const miner =
-                await getUserMiner(user);
-
-            const miningRate =
-                miner
-                    ? Number(miner.rate_per_hour)
-                    : 0.20;
 
             const result =
                 await query(
