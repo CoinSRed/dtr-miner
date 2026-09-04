@@ -769,16 +769,21 @@ async function withdrawDTR() {
         return;
     }
 
-    const wallet =
-        prompt(
-            "Enter your wallet address:"
-        );
+    const walletInput =
+        document.getElementById("walletAddress");
 
-    if (!wallet) {
-        return;
-    }
+    const wallet =
+        walletInput
+            ? walletInput.value.trim()
+            : "";
+
+if (!wallet) {
+    showMessage("Please enter your wallet address.");
+    return;
+}
 
     try {
+
 
         const data =
             await api("/api/withdraw", {
@@ -789,7 +794,6 @@ async function withdrawDTR() {
                     wallet_address: wallet
                 })
             });
-
         currentUser.balance =
             Number(currentUser.balance) -
             Number(amount);
