@@ -1549,3 +1549,16 @@ button {
     object-fit: cover;
     display: block;
 }
+
+/* Match DTR main card typography with the app */
+.dtr-main-card,
+.dtr-main-card * {
+    font-family: inherit;
+}
+
+.dtr-main-card .balance-info > span,
+.dtr-main-card .balance-info strong,
+.dtr-main-card .balance-info small,
+.dtr-main-card .mining-multiplier {
+    font-family: inherit;
+}
