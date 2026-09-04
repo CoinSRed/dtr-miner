@@ -1,22 +1,27 @@
 :root {
-    --bg: #050505;
-    --bg2: #0b0b0b;
-    --card: #111111;
-    --card2: #161616;
+    --bg: #030508;
+    --bg2: #070b12;
+    --card: #0b1018;
+    --card2: #101722;
 
-    --red: #e11d25;
-    --red2: #ff343c;
-
-    --gold: #d4af37;
-    --gold2: #f4d76a;
+    --blue: #1677ff;
+    --blue2: #36a3ff;
+    --blue-dark: #0754c9;
 
     --white: #ffffff;
-    --text: #eeeeee;
-    --muted: #8b8b8b;
+    --text: #eef6ff;
+    --muted: #8290a3;
 
-    --border: rgba(212,175,55,.18);
+    --border: rgba(54,163,255,.16);
+    --blue-glow: rgba(22,119,255,.20);
 
     --radius: 22px;
+
+    --shadow:
+        0 18px 50px rgba(0,0,0,.45);
+
+    --shadow-blue:
+        0 12px 35px rgba(22,119,255,.22);
 }
 
 * {
@@ -28,6 +33,7 @@
 
 html {
     background: var(--bg);
+    min-height: 100%;
 }
 
 body {
@@ -46,25 +52,63 @@ body {
 
     background:
         radial-gradient(
-            circle at 50% -10%,
-            rgba(225,29,37,.22),
+            circle at 50% -15%,
+            rgba(22,119,255,.22),
             transparent 38%
         ),
         radial-gradient(
-            circle at 100% 50%,
-            rgba(212,175,55,.05),
-            transparent 35%
+            circle at 0% 45%,
+            rgba(54,163,255,.07),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 100% 80%,
+            rgba(22,119,255,.08),
+            transparent 32%
         ),
         linear-gradient(
             180deg,
-            #090909,
-            #030303
+            #07101d 0%,
+            #030508 45%,
+            #020304 100%
         );
 
     overflow-x: hidden;
 }
 
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+    z-index: -1;
+
+    background:
+        linear-gradient(
+            rgba(255,255,255,.012) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.012) 1px,
+            transparent 1px
+        );
+
+    background-size: 35px 35px;
+
+    mask-image: linear-gradient(
+        to bottom,
+        black,
+        transparent 75%
+    );
+}
+
 button {
+    font: inherit;
+}
+
+input {
     font: inherit;
 }
 
@@ -75,13 +119,15 @@ button {
 
     margin: auto;
 
-    padding-bottom: 100px;
+    padding-bottom: 110px;
 
     position: relative;
 }
 
 
-/* HEADER */
+/* =========================================================
+   HEADER
+========================================================= */
 
 .top-header {
     height: 74px;
@@ -94,34 +140,46 @@ button {
 
     position: sticky;
     top: 0;
+
     z-index: 100;
 
-    background: rgba(5,5,5,.84);
+    background:
+        linear-gradient(
+            180deg,
+            rgba(3,5,8,.94),
+            rgba(3,5,8,.78)
+        );
 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
 
     border-bottom:
-        1px solid rgba(255,255,255,.05);
+        1px solid rgba(54,163,255,.08);
 }
 
 .brand {
-    color: white;
+    color: var(--white);
 
     font-size: 21px;
     font-weight: 950;
 
     letter-spacing: -.8px;
+
+    text-shadow:
+        0 0 22px rgba(54,163,255,.16);
 }
 
 .brand span {
-    color: var(--red2);
+    color: var(--blue2);
+
+    text-shadow:
+        0 0 18px rgba(54,163,255,.45);
 }
 
 .brand-subtitle {
     margin-top: 3px;
 
-    color: var(--gold);
+    color: var(--blue2);
 
     font-size: 7px;
     font-weight: 900;
@@ -138,25 +196,26 @@ button {
     align-items: center;
 
     border:
-        1px solid rgba(212,175,55,.35);
+        1px solid rgba(54,163,255,.24);
 
     border-radius: 13px;
 
     background:
         linear-gradient(
             135deg,
-            rgba(225,29,37,.18),
-            rgba(212,175,55,.08)
+            rgba(22,119,255,.15),
+            rgba(255,255,255,.025)
         );
 
     box-shadow:
-        0 0 22px rgba(212,175,55,.08);
+        0 0 25px rgba(22,119,255,.08),
+        inset 0 1px 0 rgba(255,255,255,.04);
 }
 
 .user-box span {
     max-width: 105px;
 
-    color: var(--gold2);
+    color: #dcecff;
 
     font-size: 11px;
     font-weight: 800;
@@ -167,14 +226,18 @@ button {
 }
 
 
-/* MAIN */
+/* =========================================================
+   MAIN
+========================================================= */
 
 #app-content {
     padding: 20px 15px 0;
 }
 
 
-/* PAGE */
+/* =========================================================
+   PAGE
+========================================================= */
 
 .page {
     display: none;
@@ -204,7 +267,9 @@ button {
 }
 
 
-/* WELCOME */
+/* =========================================================
+   WELCOME
+========================================================= */
 
 .welcome {
     margin: 6px 3px 18px;
@@ -212,7 +277,7 @@ button {
 
 .welcome p,
 .eyebrow {
-    color: var(--gold);
+    color: var(--blue2);
 
     font-size: 9px;
     font-weight: 900;
@@ -223,7 +288,7 @@ button {
 .welcome h1 {
     margin-top: 6px;
 
-    color: white;
+    color: var(--white);
 
     font-size: 29px;
     font-weight: 950;
@@ -233,10 +298,15 @@ button {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    text-shadow:
+        0 0 25px rgba(54,163,255,.08);
 }
 
 
-/* BALANCE */
+/* =========================================================
+   BALANCE
+========================================================= */
 
 .balance-card {
     min-height: 135px;
@@ -252,23 +322,44 @@ button {
     overflow: hidden;
 
     border:
-        1px solid rgba(212,175,55,.25);
+        1px solid rgba(54,163,255,.22);
 
     border-radius: var(--radius);
 
     background:
         linear-gradient(
-            135deg,
-            #190809,
-            #100e0a 48%,
-            #111111
+            145deg,
+            #0e1a2a,
+            #09101a 48%,
+            #070b11
         );
 
     box-shadow:
-        0 18px 45px rgba(0,0,0,.35),
-        0 0 35px rgba(225,29,37,.08);
+        0 18px 45px rgba(0,0,0,.40),
+        0 0 35px rgba(22,119,255,.08);
 
-    animation: cardFloat 5s ease-in-out infinite;
+    animation:
+        cardFloat 5s ease-in-out infinite;
+}
+
+.balance-card::after {
+    content: "";
+
+    position: absolute;
+
+    width: 180px;
+    height: 180px;
+
+    right: -100px;
+    bottom: -100px;
+
+    border-radius: 50%;
+
+    border:
+        1px solid rgba(54,163,255,.10);
+
+    box-shadow:
+        0 0 80px rgba(22,119,255,.08);
 }
 
 @keyframes cardFloat {
@@ -282,21 +373,21 @@ button {
 }
 
 .balance-glow {
-    width: 130px;
-    height: 130px;
+    width: 150px;
+    height: 150px;
 
     position: absolute;
 
-    right: -45px;
-    top: -50px;
+    right: -50px;
+    top: -60px;
 
     border-radius: 50%;
 
-    background: var(--red);
+    background: var(--blue);
 
     filter: blur(55px);
 
-    opacity: .17;
+    opacity: .18;
 }
 
 .coin-circle {
@@ -308,9 +399,11 @@ button {
     display: grid;
     place-items: center;
 
+    position: relative;
+
     border-radius: 50%;
 
-    color: #120c00;
+    color: #ffffff;
 
     font-size: 28px;
     font-weight: 950;
@@ -318,15 +411,17 @@ button {
     background:
         linear-gradient(
             145deg,
-            #fff0a1,
-            #d4af37
+            #ffffff,
+            #8bd0ff 38%,
+            #1677ff 100%
         );
 
-    border: 2px solid #f5d76e;
+    border:
+        2px solid rgba(255,255,255,.8);
 
     box-shadow:
-        0 0 25px rgba(212,175,55,.25),
-        inset 0 2px 3px rgba(255,255,255,.6);
+        0 0 28px rgba(22,119,255,.35),
+        inset 0 2px 5px rgba(255,255,255,.9);
 
     animation:
         coinPulse 2.4s ease-in-out infinite;
@@ -335,9 +430,14 @@ button {
 @keyframes coinPulse {
     50% {
         box-shadow:
-            0 0 38px rgba(212,175,55,.38),
-            inset 0 2px 3px rgba(255,255,255,.6);
+            0 0 42px rgba(22,119,255,.52),
+            inset 0 2px 5px rgba(255,255,255,.9);
     }
+}
+
+.balance-info {
+    position: relative;
+    z-index: 2;
 }
 
 .balance-info span {
@@ -354,7 +454,7 @@ button {
 
     margin-top: 4px;
 
-    color: white;
+    color: var(--white);
 
     font-size: 25px;
     font-weight: 950;
@@ -363,7 +463,7 @@ button {
 }
 
 .balance-info small {
-    color: var(--gold);
+    color: var(--blue2);
 
     font-size: 9px;
     font-weight: 900;
@@ -372,7 +472,9 @@ button {
 }
 
 
-/* MINING */
+/* =========================================================
+   MINING
+========================================================= */
 
 .mining-card {
     margin-top: 15px;
@@ -383,24 +485,45 @@ button {
     overflow: hidden;
 
     border:
-        1px solid rgba(225,29,37,.22);
+        1px solid rgba(54,163,255,.16);
 
     border-radius: var(--radius);
 
     background:
         linear-gradient(
             145deg,
-            #131313,
-            #0c0c0c
+            #0d151f,
+            #080d14
         );
 
     box-shadow:
-        0 15px 40px rgba(0,0,0,.32);
+        0 15px 40px rgba(0,0,0,.35);
+}
+
+.mining-card::before {
+    content: "";
+
+    position: absolute;
+
+    left: -100px;
+    bottom: -100px;
+
+    width: 200px;
+    height: 200px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(22,119,255,.08);
+
+    filter: blur(45px);
+
+    pointer-events: none;
 }
 
 .card-glow {
-    width: 100px;
-    height: 100px;
+    width: 110px;
+    height: 110px;
 
     position: absolute;
 
@@ -409,11 +532,11 @@ button {
 
     border-radius: 50%;
 
-    background: var(--red);
+    background: var(--blue);
 
     filter: blur(45px);
 
-    opacity: .12;
+    opacity: .14;
 }
 
 .mining-header {
@@ -434,7 +557,7 @@ button {
 .mining-header h2 {
     margin-top: 4px;
 
-    color: white;
+    color: var(--white);
 
     font-size: 20px;
     font-weight: 900;
@@ -454,12 +577,15 @@ button {
     background:
         linear-gradient(
             145deg,
-            rgba(225,29,37,.25),
-            rgba(212,175,55,.08)
+            rgba(22,119,255,.20),
+            rgba(54,163,255,.06)
         );
 
     border:
-        1px solid rgba(225,29,37,.25);
+        1px solid rgba(54,163,255,.20);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.05);
 
     transition: .3s;
 }
@@ -481,6 +607,7 @@ button {
     margin-top: 19px;
 
     display: grid;
+
     grid-template-columns: 1fr 1fr;
 
     gap: 10px;
@@ -491,10 +618,14 @@ button {
 
     border-radius: 15px;
 
-    background: rgba(255,255,255,.035);
+    background:
+        rgba(255,255,255,.025);
 
     border:
-        1px solid rgba(255,255,255,.05);
+        1px solid rgba(54,163,255,.08);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025);
 }
 
 .rate-box span {
@@ -511,7 +642,7 @@ button {
 
     margin-top: 5px;
 
-    color: var(--gold2);
+    color: var(--blue2);
 
     font-size: 11px;
     font-weight: 900;
@@ -528,11 +659,16 @@ button {
 
     border-radius: 99px;
 
-    background: #222;
+    background:
+        #151d28;
+
+    border:
+        1px solid rgba(255,255,255,.03);
 }
 
 .progress-fill {
     height: 100%;
+
     width: 0%;
 
     border-radius: inherit;
@@ -540,19 +676,22 @@ button {
     background:
         linear-gradient(
             90deg,
-            var(--red),
-            var(--gold2)
+            #0754c9,
+            #1677ff,
+            #62c4ff
         );
 
     box-shadow:
-        0 0 15px rgba(225,29,37,.4);
+        0 0 18px rgba(22,119,255,.55);
 
     transition:
         width .5s linear;
 }
 
 
-/* BUTTON */
+/* =========================================================
+   BUTTON
+========================================================= */
 
 .main-button {
     width: 100%;
@@ -577,12 +716,12 @@ button {
     background:
         linear-gradient(
             135deg,
-            var(--red),
-            #a50e14
+            #1677ff,
+            #0754c9
         );
 
     box-shadow:
-        0 9px 25px rgba(225,29,37,.22);
+        0 9px 25px rgba(22,119,255,.25);
 
     transition:
         transform .15s,
@@ -598,7 +737,7 @@ button {
     filter: brightness(1.1);
 
     box-shadow:
-        0 12px 32px rgba(225,29,37,.3);
+        0 12px 35px rgba(22,119,255,.35);
 }
 
 .main-button span {
@@ -606,13 +745,17 @@ button {
 }
 
 
-/* STATS */
+/* =========================================================
+   STATS
+========================================================= */
 
 .stats-grid {
     margin-top: 15px;
 
     display: grid;
-    grid-template-columns: repeat(3,1fr);
+
+    grid-template-columns:
+        repeat(3,1fr);
 
     gap: 9px;
 }
@@ -628,10 +771,15 @@ button {
 
     border-radius: 17px;
 
-    background: rgba(255,255,255,.035);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.035),
+            rgba(255,255,255,.015)
+        );
 
     border:
-        1px solid rgba(255,255,255,.06);
+        1px solid rgba(54,163,255,.08);
 
     transition: .25s;
 }
@@ -652,14 +800,16 @@ button {
 .stat-card strong {
     margin-top: 5px;
 
-    color: white;
+    color: var(--white);
 
     font-size: 16px;
     font-weight: 950;
 }
 
 
-/* PAGE TITLE */
+/* =========================================================
+   PAGE TITLE
+========================================================= */
 
 .page-title {
     margin: 6px 3px 18px;
@@ -672,7 +822,7 @@ button {
 .page-title h1 {
     margin-top: 4px;
 
-    color: white;
+    color: var(--white);
 
     font-size: 29px;
     font-weight: 950;
@@ -697,19 +847,24 @@ button {
 
     border-radius: 15px;
 
-    color: var(--gold2);
+    color: var(--blue2);
 
     background:
-        rgba(212,175,55,.08);
+        rgba(22,119,255,.09);
 
     border:
-        1px solid rgba(212,175,55,.18);
+        1px solid rgba(54,163,255,.18);
 
     font-size: 21px;
+
+    box-shadow:
+        0 0 25px rgba(22,119,255,.08);
 }
 
 
-/* TASKS */
+/* =========================================================
+   TASKS
+========================================================= */
 
 .task-card {
     margin-bottom: 11px;
@@ -727,12 +882,12 @@ button {
     background:
         linear-gradient(
             135deg,
-            #131313,
-            #0c0c0c
+            #0d151f,
+            #080d13
         );
 
     border:
-        1px solid rgba(255,255,255,.06);
+        1px solid rgba(54,163,255,.08);
 
     transition:
         transform .2s,
@@ -764,16 +919,16 @@ button {
     border-radius: 14px;
 
     background:
-        rgba(225,29,37,.12);
+        rgba(22,119,255,.10);
 
     border:
-        1px solid rgba(225,29,37,.2);
+        1px solid rgba(54,163,255,.18);
 
     font-size: 18px;
 }
 
 .task-left h3 {
-    color: white;
+    color: var(--white);
 
     font-size: 12px;
     font-weight: 900;
@@ -785,7 +940,7 @@ button {
 .task-left p {
     margin-top: 4px;
 
-    color: var(--gold2);
+    color: var(--blue2);
 
     font-size: 10px;
     font-weight: 900;
@@ -807,14 +962,17 @@ button {
     background:
         linear-gradient(
             135deg,
-            var(--red),
-            #a30e13
+            #1677ff,
+            #0754c9
         );
 
     font-size: 9px;
     font-weight: 950;
 
     cursor: pointer;
+
+    box-shadow:
+        0 7px 18px rgba(22,119,255,.18);
 
     transition: .2s;
 }
@@ -826,17 +984,21 @@ button {
 
 .task-button.done,
 .miner-button.active {
-    color: var(--gold2);
+    color: #8fd2ff;
 
     background:
-        rgba(212,175,55,.08);
+        rgba(22,119,255,.08);
 
     border:
-        1px solid rgba(212,175,55,.25);
+        1px solid rgba(54,163,255,.25);
+
+    box-shadow: none;
 }
 
 
-/* MINERS */
+/* =========================================================
+   MINERS
+========================================================= */
 
 .miner-card {
     margin-bottom: 11px;
@@ -853,22 +1015,47 @@ button {
     background:
         linear-gradient(
             135deg,
-            #131313,
-            #0c0c0c
+            #0d151f,
+            #080d13
         );
 
     border:
-        1px solid rgba(255,255,255,.06);
+        1px solid rgba(54,163,255,.08);
 
     transition: .25s;
+
+    position: relative;
+    overflow: hidden;
+}
+
+.miner-card::after {
+    content: "";
+
+    position: absolute;
+
+    width: 90px;
+    height: 90px;
+
+    right: -45px;
+    top: -45px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(22,119,255,.06);
+
+    filter: blur(20px);
+
+    pointer-events: none;
 }
 
 .miner-card.current {
     border-color:
-        rgba(212,175,55,.35);
+        rgba(54,163,255,.42);
 
     box-shadow:
-        0 0 25px rgba(212,175,55,.06);
+        0 0 28px rgba(22,119,255,.10),
+        inset 0 1px 0 rgba(255,255,255,.04);
 }
 
 .miner-icon {
@@ -885,10 +1072,17 @@ button {
     font-size: 21px;
 
     background:
-        rgba(212,175,55,.08);
+        linear-gradient(
+            145deg,
+            rgba(22,119,255,.14),
+            rgba(54,163,255,.04)
+        );
 
     border:
-        1px solid rgba(212,175,55,.16);
+        1px solid rgba(54,163,255,.18);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.04);
 }
 
 .miner-info {
@@ -898,7 +1092,7 @@ button {
 }
 
 .miner-info h3 {
-    color: white;
+    color: var(--white);
 
     font-size: 12px;
     font-weight: 900;
@@ -917,13 +1111,15 @@ button {
 
     margin-top: 5px;
 
-    color: var(--gold2);
+    color: var(--blue2);
 
     font-size: 10px;
 }
 
 
-/* FRIENDS */
+/* =========================================================
+   FRIENDS
+========================================================= */
 
 .referral-card,
 .bonus-info,
@@ -936,12 +1132,15 @@ button {
     background:
         linear-gradient(
             145deg,
-            #151515,
-            #0d0d0d
+            #0e151e,
+            #080d13
         );
 
     border:
-        1px solid rgba(255,255,255,.06);
+        1px solid rgba(54,163,255,.10);
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.25);
 }
 
 .referral-card {
@@ -960,13 +1159,18 @@ button {
     border-radius: 19px;
 
     background:
-        rgba(225,29,37,.1);
+        rgba(22,119,255,.10);
+
+    border:
+        1px solid rgba(54,163,255,.16);
+
+    color: var(--blue2);
 
     font-size: 27px;
 }
 
 .referral-card h2 {
-    color: white;
+    color: var(--white);
 
     font-size: 20px;
     font-weight: 950;
@@ -978,6 +1182,7 @@ button {
     color: var(--muted);
 
     font-size: 11px;
+
     line-height: 1.6;
 }
 
@@ -992,7 +1197,11 @@ button {
 
     border-radius: 14px;
 
-    background: rgba(255,255,255,.035);
+    background:
+        rgba(255,255,255,.025);
+
+    border:
+        1px solid rgba(54,163,255,.07);
 }
 
 .referral-count span {
@@ -1003,7 +1212,7 @@ button {
 }
 
 .referral-count strong {
-    color: var(--gold2);
+    color: var(--blue2);
 
     font-size: 18px;
 }
@@ -1015,7 +1224,7 @@ button {
 .bonus-info h3 {
     margin-top: 7px;
 
-    color: white;
+    color: var(--white);
 
     font-size: 16px;
 }
@@ -1026,14 +1235,19 @@ button {
     color: var(--muted);
 
     font-size: 10px;
+
     line-height: 1.6;
 }
 
 
-/* PROFILE */
+/* =========================================================
+   PROFILE
+========================================================= */
 
 .profile-card {
     text-align: center;
+
+    padding: 25px 18px;
 }
 
 .profile-avatar {
@@ -1045,9 +1259,9 @@ button {
     display: grid;
     place-items: center;
 
-    border-radius: 50%;
+    border-radius: 22px;
 
-    color: #111;
+    color: #ffffff;
 
     font-size: 29px;
     font-weight: 950;
@@ -1055,35 +1269,43 @@ button {
     background:
         linear-gradient(
             145deg,
-            #ffe98b,
-            var(--gold)
+            #ffffff,
+            #70c4ff 35%,
+            #1677ff
         );
 
+    border:
+        2px solid rgba(255,255,255,.65);
+
     box-shadow:
-        0 0 30px rgba(212,175,55,.15);
+        0 0 32px rgba(22,119,255,.28);
 }
 
 .profile-card h2 {
     margin-top: 12px;
 
-    color: white;
+    color: var(--white);
 
-    font-size: 19px;
+    font-size: 20px;
+    font-weight: 950;
 }
 
 .profile-card p {
     margin-top: 4px;
 
-    color: var(--gold);
+    color: var(--blue2);
 
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: 700;
 }
 
 .profile-stats {
     margin-top: 11px;
 
     display: grid;
-    grid-template-columns: repeat(3,1fr);
+
+    grid-template-columns:
+        repeat(3,1fr);
 
     gap: 9px;
 }
@@ -1095,10 +1317,11 @@ button {
 
     border-radius: 16px;
 
-    background: rgba(255,255,255,.035);
+    background:
+        rgba(255,255,255,.025);
 
     border:
-        1px solid rgba(255,255,255,.05);
+        1px solid rgba(54,163,255,.08);
 }
 
 .profile-stats span {
@@ -1107,6 +1330,7 @@ button {
     color: var(--muted);
 
     font-size: 8px;
+    font-weight: 800;
 }
 
 .profile-stats strong {
@@ -1114,451 +1338,16 @@ button {
 
     margin-top: 5px;
 
-    color: white;
-
-    font-size: 10px;
-}
-
-.withdraw-card {
-    margin-top: 11px;
-}
-
-.withdraw-card h3 {
-    margin-top: 7px;
-
-    color: white;
-
-    font-size: 18px;
-}
-
-.withdraw-card p {
-    margin-top: 7px;
-
-    color: var(--muted);
-
-    font-size: 10px;
-    line-height: 1.6;
-}
-
-.withdraw-card p strong {
-    color: var(--gold2);
-}
-
-
-/* NAV */
-
-.bottom-nav {
-    height: 78px;
-
-    position: fixed;
-
-    left: 50%;
-    bottom: 9px;
-
-    transform: translateX(-50%);
-
-    width:
-        min(
-            calc(100% - 18px),
-            500px
-        );
-
-    z-index: 200;
-
-    padding: 7px;
-
-    display: grid;
-    grid-template-columns: repeat(5,1fr);
-
-    gap: 4px;
-
-    border-radius: 23px;
-
-    background:
-        rgba(15,15,15,.92);
-
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-
-    box-shadow:
-        0 18px 50px rgba(0,0,0,.55);
-}
-
-.nav-item {
-    border: 0;
-
-    border-radius: 17px;
-
-    background: transparent;
-
-    color: #686868;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    gap: 4px;
-
-    cursor: pointer;
-
-    transition:
-        color .2s,
-        background .2s,
-        transform .2s;
-}
-
-.nav-item span {
-    font-size: 17px;
-
-    transition: .25s;
-}
-
-.nav-item label {
-    font-size: 8px;
-    font-weight: 900;
-}
-
-.nav-item.active {
-    color: white;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(225,29,37,.18),
-            rgba(212,175,55,.08)
-        );
-}
-
-.nav-item.active span {
-    color: var(--gold2);
-
-    transform:
-        translateY(-1px)
-        scale(1.08);
-}
-
-.nav-item:active {
-    transform: scale(.9);
-}
-
-
-/* SMALL PHONES */
-
-@media (max-width: 350px) {
-
-    #app-content {
-        padding-left: 11px;
-        padding-right: 11px;
-    }
-
-    .balance-info strong {
-        font-size: 21px;
-    }
-
-    .nav-item label {
-        font-size: 7px;
-    }
-
-}=
-   PROFILE
-   ========================================================= */
-
-.profile-card {
-    padding: 25px 18px;
-
-    text-align: center;
-
-    border-radius: 22px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #171717,
-            #0c0c0c
-        );
-
-    border: 1px solid rgba(212, 175, 55, 0.18);
-}
-
-.profile-avatar {
-    width: 70px;
-    height: 70px;
-
-    margin: 0 auto 11px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 22px;
-
-    background:
-        linear-gradient(
-            135deg,
-            var(--red),
-            var(--red-dark)
-        );
-
-    border: 2px solid rgba(212, 175, 55, 0.45);
-
-    font-size: 32px;
-
-    box-shadow: var(--shadow-red);
-}
-
-.profile-card h2 {
     color: var(--white);
 
-    font-size: 20px;
-    font-weight: 950;
-}
-
-.profile-card p {
-    margin-top: 4px;
-
-    color: var(--gold);
-
     font-size: 11px;
-    font-weight: 700;
-}
-
-.profile-stats {
-    display: grid;
-
-    grid-template-columns: repeat(3, 1fr);
-
-    gap: 9px;
-
-    margin-top: 11px;
-}
-
-.profile-stats > div {
-    padding: 14px 8px;
-
-    text-align: center;
-
-    border-radius: 15px;
-
-    background: #111111;
-
-    border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.profile-stats span {
-    display: block;
-
-    color: var(--muted);
-
-    font-size: 9px;
-    font-weight: 700;
-}
-
-.profile-stats strong {
-    display: block;
-
-    margin-top: 6px;
-
-    color: var(--gold-light);
-
-    font-size: 12px;
     font-weight: 950;
-}
-
-.withdraw-card {
-    margin-top: 12px;
-
-    padding: 18px;
-
-    border-radius: 19px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #171010,
-            #0d0d0d
-        );
-
-    border: 1px solid rgba(215, 25, 32, 0.20);
-}
-
-.withdraw-card h3 {
-    color: var(--white);
-
-    font-size: 15px;
-    font-weight: 900;
-}
-
-.withdraw-card p {
-    margin-top: 7px;
-
-    color: var(--muted);
-
-    font-size: 11px;
-    line-height: 1.55;
 }
 
 
 /* =========================================================
-   BOTTOM NAVIGATION
-   ========================================================= */
+   WITHDRAW
+========================================================= */
 
-.bottom-nav {
-    position: fixed;
-
-    left: 50%;
-    bottom: 10px;
-
-    transform: translateX(-50%);
-
-    width: calc(100% - 20px);
-
-    max-width: 500px;
-
-    height: 68px;
-
-    padding: 7px;
-
-    display: grid;
-
-    grid-template-columns: repeat(5, 1fr);
-
-    gap: 4px;
-
-    z-index: 100;
-
-    border-radius: 21px;
-
-    background:
-        rgba(14, 14, 14, 0.94);
-
-    border: 1px solid rgba(212, 175, 55, 0.18);
-
-    box-shadow:
-        0 15px 50px rgba(0, 0, 0, 0.55);
-
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-}
-
-.nav-item {
-    border: 0;
-
-    border-radius: 15px;
-
-    background: transparent;
-
-    color: var(--muted);
-
-    display: flex;
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    gap: 3px;
-
-    cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        transform 0.15s ease;
-}
-
-.nav-item span {
-    font-size: 18px;
-
-    line-height: 1;
-}
-
-.nav-item label {
-    font-size: 8px;
-    font-weight: 800;
-}
-
-/* =========================
-   PROFILE TON WALLET
-========================= */
-
-.profile-wallet {
-    margin: 18px 0;
-    padding: 18px;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 18px;
-    background: linear-gradient(145deg, #111111, #090909);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-}
-
-.profile-wallet h3 {
-    margin: 0 0 12px;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-
-.profile-wallet #ton-connect {
-    width: 100%;
-}
-
-.profile-wallet #ton-connect button {
-    width: 100% !important;
-    min-height: 48px !important;
-    border-radius: 14px !important;
-    font-weight: 700 !important;
-}
-
-
-/* =========================
-   WITHDRAW WALLET INPUT
-========================= */
-
-.withdraw-card input#walletAddress {
-    width: 100%;
-    box-sizing: border-box;
-    min-height: 52px;
-    padding: 0 16px;
-    margin-top: 12px;
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 14px;
-    background: #0d0d0d;
-    color: #ffffff;
-    font-size: 14px;
-    outline: none;
-    transition: 0.2s ease;
-}
-
-.withdraw-card input#walletAddress::placeholder {
-    color: rgba(255,255,255,0.40);
-}
-
-.withdraw-card input#walletAddress:focus {
-    border-color: rgba(255,255,255,0.30);
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
-}
-
-.dtr-coin img {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-}
-
-/* Match DTR main card typography with the app */
-.dtr-main-card,
-.dtr-main-card * {
-    font-family: inherit;
-}
-
-.dtr-main-card .balance-info > span,
-.dtr-main-card .balance-info strong,
-.dtr-main-card .balance-info small,
-.dtr-main-card .mining-multiplier {
-    font-family: inherit;
-}
+.withdraw-card {
+    margin-top
