@@ -52,7 +52,7 @@ async function api(url, options = {}) {
         headers
     });
 
-    const data = await response.json().catch(() => ({}));
+            const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
         throw new Error(
@@ -78,7 +78,8 @@ function showMessage(message) {
 
 async function loadUser() {
     try {
-        const data = await api("/api/me");
+         const data =
+    await api("/api/me");
 
         currentUser = data.user;
         currentMiner = data.miner;
@@ -220,7 +221,7 @@ function updateMiningButton() {
 
 async function startMining() {
     try {
-        const data =
+                const data =
             await api("/api/mining/start", {
                 method: "POST"
             });
@@ -326,7 +327,7 @@ function startMiningTimer(startTime) {
 
 async function claimMining() {
     try {
-        const data =
+                const data =
             await api("/api/mining/claim", {
                 method: "POST"
             });
