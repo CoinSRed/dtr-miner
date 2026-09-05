@@ -1199,3 +1199,23 @@ button {
 /* =========================
    TOUCH / SCROLL
 ==========
+
+/* FIX: keep all 5 navigation buttons in one row */
+.bottom-nav {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.nav-item {
+    min-width: 0;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.nav-item span {
+    font-size: 18px;
+}
+
+.nav-item label {
+    font-size: 8px;
+}
+
