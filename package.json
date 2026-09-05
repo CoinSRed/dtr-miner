@@ -4,7 +4,7 @@
   "description": "DTR Mining Telegram Mini App Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js & node bot.js"
   },
   "engines": {
     "node": ">=20"
