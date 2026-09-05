@@ -77,6 +77,64 @@ function showMessage(message) {
    USER
 ========================= */
 
+async function loadReferrals() {
+    try {
+        const data = await api("/api/referrals");
+
+        setText(
+            "referralCount",
+            data.referrals || 0
+        );
+
+        const list =
+            document.getElementById("friendsList");
+
+        if (!list) return;
+
+        if (!data.friends || data.friends.length === 0) {
+            list.innerHTML = `
+                <div class="empty-friends">
+                    No friends yet.
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = data.friends.map(friend => {
+            const name =
+                friend.first_name ||
+                (friend.username
+                    ? `@${friend.username}`
+                    : "DTR User");
+
+            return `
+                <div class="friend-item">
+                    <div class="friend-info">
+                        <div class="friend-name">
+                            ${name}
+                        </div>
+
+                        <div class="friend-status">
+                            <span class="status-dot"></span>
+                            Connected
+                        </div>
+                    </div>
+
+                    <div class="friend-reward">
+                        +${formatDTR(friend.reward)} DTR
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+    } catch (error) {
+        console.error(
+            "Unable to load referrals:",
+            error
+        );
+    }
+}
+
 async function loadUser() {
     try {
 
@@ -87,6 +145,7 @@ async function loadUser() {
         currentMiner = data.miner;
 
         updateUserUI();
+        loadReferrals();
 
         if (
             currentUser.mining_active &&

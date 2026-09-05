@@ -1058,29 +1058,49 @@ app.get(
                 await query(
                     `
                     SELECT
-                        COUNT(*) AS count,
-                        COALESCE(
-                            SUM(reward),
-                            0
-                        ) AS total_reward
-                    FROM referrals
-                    WHERE inviter_id = $1
+                        r.id,
+                        r.reward,
+                        r.created_at,
+                        u.telegram_id,
+                        u.username,
+                        u.first_name
+                    FROM referrals r
+                    JOIN users u
+                        ON u.id = r.invited_id
+                    WHERE r.inviter_id = $1
+                    ORDER BY r.created_at DESC
                     `,
                     [user.id]
+                );
+
+            const totalReward =
+                result.rows.reduce(
+                    (sum, row) =>
+                        sum + Number(row.reward || 0),
+                    0
                 );
 
             res.json({
                 success: true,
 
                 referrals:
-                    Number(
-                        result.rows[0].count || 0
-                    ),
+                    result.rows.length,
 
                 total_reward:
-                    Number(
-                        result.rows[0].total_reward || 0
-                    )
+                    totalReward,
+
+                friends:
+                    result.rows.map(row => ({
+                        id: row.id,
+                        telegram_id: row.telegram_id,
+                        username: row.username,
+                        first_name:
+                            row.first_name || "DTR User",
+                        reward:
+                            Number(row.reward || 0),
+                        connected: true,
+                        created_at: row.created_at
+                    }))
             });
 
         } catch (error) {
