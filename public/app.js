@@ -108,6 +108,10 @@ async function loadReferrals() {
                     : "DTR User")
             );
 
+            const joinedDate = friend.created_at
+                ? new Date(friend.created_at).toLocaleDateString()
+                : "Unknown date";
+
             return `
                 <div class="friend-item">
                     <div class="friend-info">
@@ -118,6 +122,10 @@ async function loadReferrals() {
                         <div class="friend-status">
                             <span class="status-dot"></span>
                             Connected
+                        </div>
+
+                        <div class="friend-date">
+                            Joined ${joinedDate}
                         </div>
                     </div>
 

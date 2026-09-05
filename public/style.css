@@ -1284,3 +1284,9 @@ button {
     color: rgba(255, 255, 255, 0.5);
     font-size: 13px;
 }
+
+.friend-date {
+    margin-top: 3px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+}
