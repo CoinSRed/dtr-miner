@@ -849,9 +849,13 @@ async function withdrawDTR() {
         return;
     }
 
-    const amount = parseFloat(
-        String(input).replace(",", ".").trim()
-    );
+    const normalizedInput = String(input)
+        .trim()
+        .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+        .replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+        .replace(",", ".");
+
+    const amount = parseFloat(normalizedInput);
 
     if (!Number.isFinite(amount) || amount <= 0) {
         showMessage(
