@@ -101,11 +101,12 @@ async function loadReferrals() {
         }
 
         list.innerHTML = data.friends.map(friend => {
-            const name =
+            const name = escapeHTML(
                 friend.first_name ||
                 (friend.username
                     ? `@${friend.username}`
-                    : "DTR User");
+                    : "DTR User")
+            );
 
             return `
                 <div class="friend-item">
