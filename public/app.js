@@ -841,21 +841,13 @@ async function copyReferral() {
 ========================= */
 
 async function withdrawDTR() {
-    const input = prompt(
-        "Enter DTR amount to withdraw:"
-    );
+    const amountInput =
+        document.getElementById("withdrawAmount");
 
-    if (input === null) {
-        return;
-    }
-
-    const normalizedInput = String(input)
-        .trim()
-        .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
-        .replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
-        .replace(",", ".");
-
-    const amount = parseFloat(normalizedInput);
+    const amount =
+        amountInput
+            ? parseFloat(amountInput.value)
+            : NaN;
 
     if (!Number.isFinite(amount) || amount <= 0) {
         showMessage(
@@ -899,6 +891,8 @@ async function withdrawDTR() {
             Number(currentUser.balance) - amount;
 
         updateUserUI();
+
+        amountInput.value = "";
 
         showMessage(
             "Withdrawal request submitted."
