@@ -116,16 +116,13 @@ function calculateMining(user, miningRate) {
     const rate =
         Number(miningRate || 0);
 
-    const MAX_MINING_REWARD = 0.000200;
     const MAX_MINING_SECONDS = 24 * 60 * 60;
 
     const cappedElapsedSeconds =
         Math.min(elapsedSeconds, MAX_MINING_SECONDS);
 
-    const earned = Math.min(
-        cappedElapsedSeconds * (rate / 3600),
-        MAX_MINING_REWARD
-    );
+    const earned =
+        cappedElapsedSeconds * (rate / 3600);
 
     return {
         earned,
