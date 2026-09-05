@@ -1212,6 +1212,8 @@ app.post(
 
             await connection.query("BEGIN");
 
+            console.log("WITHDRAW BODY:", req.body);
+
             const amount =
                 Number(req.body.amount);
 
