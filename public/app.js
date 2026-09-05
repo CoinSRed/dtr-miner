@@ -851,6 +851,8 @@ async function withdrawDTR() {
         return;
     }
 
+    console.log("WITHDRAW INPUT:", amount, "NUMBER:", Number(amount));
+
     const walletInput =
         document.getElementById("walletAddress");
 
