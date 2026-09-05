@@ -841,17 +841,31 @@ async function copyReferral() {
 ========================= */
 
 async function withdrawDTR() {
+    const input = prompt(
+        "Enter DTR amount to withdraw:"
+    );
 
-    const amount =
-        prompt(
-            "Enter DTR amount to withdraw:"
-        );
-
-    if (amount === null) {
+    if (input === null) {
         return;
     }
 
-    console.log("WITHDRAW INPUT:", amount, "NUMBER:", Number(amount));
+    const amount = parseFloat(
+        String(input).replace(",", ".").trim()
+    );
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        showMessage(
+            "Please enter a valid DTR amount."
+        );
+        return;
+    }
+
+    if (amount < 4) {
+        showMessage(
+            "Minimum withdrawal is 4 DTR."
+        );
+        return;
+    }
 
     const walletInput =
         document.getElementById("walletAddress");
@@ -861,27 +875,24 @@ async function withdrawDTR() {
             ? walletInput.value.trim()
             : "";
 
-if (!wallet) {
-    showMessage("Please enter your wallet address.");
-    return;
-}
+    if (!wallet) {
+        showMessage(
+            "Please enter your wallet address."
+        );
+        return;
+    }
 
     try {
+        await api("/api/withdraw", {
+            method: "POST",
+            body: JSON.stringify({
+                amount: amount,
+                wallet_address: wallet
+            })
+        });
 
-
-
-        const data =
-            await api("/api/withdraw", {
-                method: "POST",
-
-                body: JSON.stringify({
-                    amount: Number(amount),
-                    wallet_address: wallet
-                })
-            });
         currentUser.balance =
-            Number(currentUser.balance) -
-            Number(amount);
+            Number(currentUser.balance) - amount;
 
         updateUserUI();
 
