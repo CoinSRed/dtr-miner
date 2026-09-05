@@ -86,6 +86,11 @@ async function loadReferrals() {
             data.referrals || 0
         );
 
+        setText(
+            "referralTotalReward",
+            `${formatDTR(data.total_reward || 0)} DTR`
+        );
+
         const list =
             document.getElementById("friendsList");
 
